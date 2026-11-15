@@ -68,6 +68,9 @@ jobs:
           java-version: 21
           cache: gradle
       - uses: android-actions/setup-android@v3
+        with:
+          # eski 'tools' paketi artık indirilemiyor (varsayılan) → yalnızca gerekenler
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
       - name: Yükleme anahtarını çöz (Secrets tanımlıysa)
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
