@@ -47,6 +47,8 @@ jobs:
   android:
     name: Android derlemesi
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Releases sayfasına APK/AAB eklemek için
     timeout-minutes: 40
     env:
       VERSION_CODE: ${{ github.run_number }}
@@ -93,17 +95,34 @@ jobs:
           ./gradlew --no-daemon assembleDebug assembleRelease bundleRelease
       - name: Çıktıları topla
         run: |
-          mkdir -p out
-          cp android/app/build/outputs/apk/debug/*.apk out/WoodEmpire-debug.apk
-          cp android/app/build/outputs/apk/release/*.apk out/ 2>/dev/null || true
-          cp android/app/build/outputs/bundle/release/*.aab out/WoodEmpire-release.aab
-          ls -la out
+          mkdir -p out/apk out/aab
+          # APK: telefona doğrudan kurulur (debug her zaman imzalı; release, Secrets varsa imzalı)
+          cp android/app/build/outputs/apk/debug/*.apk out/apk/WoodEmpire-${VERSION_NAME}-debug.apk
+          for f in android/app/build/outputs/apk/release/*.apk; do
+            case "$f" in *unsigned*) cp "$f" out/apk/WoodEmpire-${VERSION_NAME}-release-imzasiz.apk ;; *) cp "$f" out/apk/WoodEmpire-${VERSION_NAME}-release.apk ;; esac
+          done
+          # AAB: Google Play Console'a yüklenir
+          cp android/app/build/outputs/bundle/release/*.aab out/aab/WoodEmpire-${VERSION_NAME}.aab
+          ls -laR out
+      # İki ayrı indirme: Actions → çalıştırma → Artifacts bölümünde "WoodEmpire-APK" ve "WoodEmpire-AAB"
       - uses: actions/upload-artifact@v4
         with:
-          name: wood-empire-android
-          path: out/
-      - name: Sürüm yayınla (etiketli push)
-        if: startsWith(github.ref, 'refs/tags/v')
+          name: WoodEmpire-APK
+          path: out/apk/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WoodEmpire-AAB
+          path: out/aab/
+      # Her main gönderiminde Releases sayfasında ayrı ayrı indirilebilir APK ve AAB (giriş yapmadan, zip'siz)
+      - name: Sürüm sayfası (Releases)
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         uses: softprops/action-gh-release@v2
         with:
-          files: out/*
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', env.VERSION_NAME) }}
+          name: Wood Empire ${{ env.VERSION_NAME }}
+          body: |
+            **APK** → telefona doğrudan kur (debug sürümü test içindir).
+            **AAB** → Google Play Console'a yükle (imzalı olması için Secrets gerekir, bkz. docs/BUILD.md).
+          files: |
+            out/apk/*.apk
+            out/aab/*.aab
