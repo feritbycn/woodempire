@@ -46,9 +46,9 @@ export class CloudSystem {
       if (c.uid && c.uid !== this.uid) { c.name = null; } // kimlik değişmiş (veri temizlenmiş): eski ad bu kimliğe ait değil
       c.uid = this.uid;
       await this.sync(true);
-      this.game.bus.on('levelUp', () => { this.sync(); this.maybeAskName(); });
+      this.game.bus.on('levelUp', () => { this.sync(); setTimeout(() => this.maybeAskName(), 1500); });
       document.addEventListener('visibilitychange', () => { if (document.hidden) this.sync(); });
-      setTimeout(() => this.maybeAskName(), 4000);
+      setTimeout(() => this.maybeAskName(), 2500); // seviyesi yetmiş ama adı olmayan eski oyunculara da hemen sorulur
       setTimeout(() => this.checkGifts(), 6000);
     } catch (e) {
       console.warn('[Bulut] kullanılamıyor', e);
@@ -62,6 +62,9 @@ export class CloudSystem {
     this.syncT -= dt; this.giftT -= dt;
     if (this.syncT <= 0) { this.syncT = CLOUD.syncEvery; this.sync(); }
     if (this.giftT <= 0) { this.giftT = CLOUD.giftCheckEvery; this.checkGifts(); }
+    // zorunlu ad: pencere herhangi bir şekilde kapanmışsa yeniden aç
+    this.nameT = (this.nameT || 0) - dt;
+    if (this.nameT <= 0) { this.nameT = 5; if (this.needsName()) this.maybeAskName(); }
   }
 
   shortId() { return this.uid ? this.uid.slice(0, 6).toUpperCase() : '—'; }
@@ -104,27 +107,32 @@ export class CloudSystem {
   }
 
   // ---------- KULLANICI ADI ----------
+  /** 2. seviyeden itibaren kullanıcı adı ZORUNLU: ad seçilene kadar pencere kapanmaz (geri tuşu, dışarı dokunma işe yaramaz).
+   *  Bulut bağlantısı yoksa ad benzersizliği denetlenemeyeceği için oyun engellenmez; bağlantı gelince sorulur. */
+  needsName() { const g = this.game; return this.status === 'ok' && !g.state.cloud?.name && g.state.level >= CLOUD.nameLevel; }
   maybeAskName(force = false) {
     const g = this.game;
     if (this.status !== 'ok' || g.state.cloud?.name) return;
-    if (!force && (g.state.level < CLOUD.nameLevel || this.askedThisSession)) return;
-    if (!force && document.querySelector('.modal-wrap')) { setTimeout(() => this.maybeAskName(), 5000); return; }
-    this.askedThisSession = true;
-    const ui = g.ui;
+    if (!force && g.state.level < CLOUD.nameLevel) return;
+    if (document.querySelector('.namepick')) return; // zaten açık
+    if (document.querySelector('.modal-wrap')) { clearTimeout(this.askT); this.askT = setTimeout(() => this.maybeAskName(force), 3000); return; }
+    const ui = g.ui; const must = g.state.level >= CLOUD.nameLevel; // 2. seviye altında Ayarlar'dan açılırsa isteğe bağlı
     const m = ui.modal(`<div class="namepick"><h2>Kullanıcı adını seç</h2>
-      <p>Bu ad sana özel olacak; başka hiç kimse aynı adı alamaz. ${CLOUD.nameMin}–${CLOUD.nameMax} karakter: harf, rakam ve _ kullanabilirsin.</p>
+      <p>${must ? 'Oyuna devam etmek için bir kullanıcı adı seçmelisin. ' : ''}Bu ad sana özel olacak; başka hiç kimse aynı adı alamaz. ${CLOUD.nameMin}–${CLOUD.nameMax} karakter: harf, rakam ve _ kullanabilirsin.</p>
       <input id="np-in" maxlength="${CLOUD.nameMax}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ör. Kereste_Kralı">
       <div class="np-msg" id="np-msg"></div>
-      <div class="btn-row"><button class="btn" data-act="modal:close">Sonra</button><button class="btn green" id="np-ok">Kaydet</button></div></div>`);
+      ${must ? '<button class="btn green wide" id="np-ok">Kaydet ve devam et</button>' : '<div class="btn-row"><button class="btn" data-act="modal:close">Sonra</button><button class="btn green" id="np-ok">Kaydet</button></div>'}</div>`, { sticky: must, cls: 'namepick-modal' });
+    const realClose = m.close; if (must) m.close = () => {}; // zorunluyken ad seçilmeden kapanmaz (geri tuşu dahil)
     const inp = m.querySelector('#np-in'), msg = m.querySelector('#np-msg'), ok = m.querySelector('#np-ok');
     const show = (t, good = false) => { msg.textContent = t || ''; msg.className = 'np-msg' + (good ? ' good' : t ? ' bad' : ''); };
     inp.addEventListener('input', () => show(nameProblem(inp.value) && inp.value.length >= CLOUD.nameMin ? nameProblem(inp.value) : ''));
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') ok.click(); });
     ok.addEventListener('click', async () => {
       const p = nameProblem(inp.value); if (p) { show(p); return; }
       ok.disabled = true; show('Kontrol ediliyor…');
       const r = await this.claimName(inp.value.trim());
       ok.disabled = false;
-      if (r.ok) { show(`Hoş geldin, ${r.name}!`, true); g.audio?.play?.('reward'); g.bus.emit('toast', { text: `Kullanıcı adın: ${r.name}`, type: 'success' }); setTimeout(() => m.close?.(), 700); }
+      if (r.ok) { show(`Hoş geldin, ${r.name}!`, true); g.audio?.play?.('reward'); g.bus.emit('toast', { text: `Kullanıcı adın: ${r.name}`, type: 'success' }); setTimeout(() => realClose(), 700); }
       else show(r.error);
     });
     setTimeout(() => inp.focus(), 200);
