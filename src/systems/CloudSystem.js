@@ -50,6 +50,8 @@ export class CloudSystem {
       document.addEventListener('visibilitychange', () => { if (document.hidden) this.sync(); });
       setTimeout(() => this.maybeAskName(), 2500); // seviyesi yetmiş ama adı olmayan eski oyunculara da hemen sorulur
       setTimeout(() => this.checkGifts(), 6000);
+      // kişiye özel hediye ve düzenlemeler ANINDA gelir (oyun açıkken); herkese olanlar 5 dakikada bir kontrol edilir
+      try { F.onSnapshot(F.query(F.collection(this.db, 'gifts'), F.where('to', '==', this.uid)), (snap) => { if (!snap.metadata?.hasPendingWrites && snap.docChanges().some((c) => c.type === 'added')) this.checkGifts(); }, () => {}); } catch {}
     } catch (e) {
       console.warn('[Bulut] kullanılamıyor', e);
       this.status = 'error';
@@ -160,7 +162,8 @@ export class CloudSystem {
 
   // ---------- HEDİYELER ----------
   async checkGifts() {
-    if (this.status !== 'ok' || this.checking) return;
+    if (this.status !== 'ok') return;
+    if (this.checking) { this.recheck = true; return; }
     this.checking = true;
     const F = this.F;
     try {
@@ -175,9 +178,40 @@ export class CloudSystem {
       const list = [...mine.docs, ...all.docs]
         .filter((d) => !done.has(d.id) && !this.shownGift.has(d.id))
         .filter((d) => { const x = d.data(); return !x.expiresAt || x.expiresAt.toMillis() > now; });
-      for (const d of list) { this.shownGift.add(d.id); this.showGift(d.id, d.data()); }
+      for (const d of list) {
+        this.shownGift.add(d.id);
+        const x = d.data();
+        if (x.kind === 'set') this.applySet(d.id, x); else this.showGift(d.id, x); // yönetici düzenlemesi pencere açmadan uygulanır
+      }
     } catch (e) { console.warn('[Bulut] hediye kontrolü', e?.code || e); }
     this.checking = false;
+    if (this.recheck) { this.recheck = false; setTimeout(() => this.checkGifts(), 500); }
+  }
+
+  /** YÖNETİCİ DÜZENLEMESİ: panelden seviye / altın / para / XP doğrudan ayarlanır (ekleme değil, yeni değer).
+   *  Önce "alındı" kaydı yazılır → aynı düzenleme ikinci kez uygulanmaz. */
+  async applySet(id, data) {
+    const F = this.F; const g = this.game; const s = g.state; const v = data.set || {};
+    try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }
+    catch (e) { console.warn('[Bulut] düzenleme kaydı', e?.code || e); return; }
+    const num = (x) => (x === undefined || x === null || x === '' || !isFinite(Number(x)) ? null : Math.max(0, Math.floor(Number(x))));
+    const changed = [];
+    if (num(v.level) !== null) { s.level = Math.max(1, num(v.level)); changed.push(`Seviye ${s.level}`); }
+    if (num(v.xp) !== null) { s.xp = num(v.xp); changed.push(`${fmt(s.xp)} XP`); }
+    try { const need = g.levels.need; if (s.xp >= need) s.xp = need - 1; } catch {}
+    if (num(v.gold) !== null) { const d = num(v.gold) - s.gold; s.gold = num(v.gold); g.bus.emit('gold', { amount: d, source: 'admin' }); changed.push(`${fmt(s.gold)} altın`); }
+    if (num(v.money) !== null) { const d = num(v.money) - s.money; s.money = num(v.money); g.bus.emit('money', { amount: d, source: 'admin' }); changed.push(`${fmt(s.money)} para`); }
+    g.bus.emit('xp', { amount: 0 });
+    g.save.requestSave(true); this.sync();
+    const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const open = () => {
+      if (document.querySelector('.modal-wrap')) { setTimeout(open, 3000); return; }
+      g.ui.modal(`<div class="giftbox"><div class="gift-ic">🛠️</div><h2>Hesabın güncellendi</h2>
+        ${data.msg ? `<p class="gift-msg">${esc(data.msg)}</p>` : '<p class="gift-msg">Yönetici hesabında değişiklik yaptı.</p>'}
+        <div class="gift-items">${changed.map((c) => `<div class="gl">${c}</div>`).join('')}</div>
+        <button class="btn green wide" data-act="modal:close">Tamam</button></div>`);
+    };
+    if (changed.length) open();
   }
 
   giftLines(items) {

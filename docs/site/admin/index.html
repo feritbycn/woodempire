@@ -67,7 +67,7 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     </div>
 
     <div id="t-gifts" class="hide">
-      <div class="card"><h3 style="margin-top:0">Gönderilen hediyeler</h3><p class="muted">Bekleyen bir hediyeyi silersen henüz almamış oyuncular artık göremez.</p>
+      <div class="card"><h3 style="margin-top:0">Gönderilen hediyeler ve düzenlemeler</h3><p class="muted">Bekleyen bir hediyeyi silersen henüz almamış oyuncular artık göremez.</p>
         <div class="tbl-wrap"><table><thead><tr><th>Tarih</th><th>Alıcı</th><th>İçerik</th><th>Mesaj</th><th></th></tr></thead><tbody id="gift-rows"></tbody></table></div></div>
     </div>
   </section>
@@ -76,7 +76,16 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
 <dialog id="dlg-player"><div class="dlg">
   <h2 id="dp-title" style="margin:0"></h2><div class="muted" id="dp-sub"></div>
   <div class="kv" id="dp-kv"></div>
-  <h3>Hediye gönder</h3>
+  <div id="dp-set-wrap">
+    <h3>Değerleri düzenle</h3>
+    <p class="muted" style="margin-top:-6px">Girdiğin değer oyuncunun hesabındaki değerin <b>yerine geçer</b>. Boş bırakılan alan değişmez. Oyun açıksa hemen, kapalıysa açınca uygulanır.</p>
+    <div class="row"><div><label>Seviye</label><input type="number" min="1" id="s-level"></div><div><label>XP (seviye içi)</label><input type="number" min="0" id="s-xp"></div></div>
+    <div class="row" style="margin-top:8px"><div><label>Altın</label><input type="number" min="0" id="s-gold"></div><div><label>Para</label><input type="number" min="0" id="s-money"></div></div>
+    <div style="margin-top:8px"><label>Not (isteğe bağlı, oyuncuya gösterilir)</label><input id="s-msg" maxlength="140" placeholder="ör. Destek talebin çözüldü"></div>
+    <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="dp-set">Değerleri kaydet</button></div></div>
+    <p id="dp-set-msg"></p>
+  </div>
+  <h3>Hediye gönder (üstüne ekler)</h3>
   <div id="dp-form"></div>
   <div class="row" style="margin-top:12px"><button class="ghost" id="dp-close">Kapat</button><button id="dp-send">Gönder</button></div>
   <p id="dp-msg"></p>
@@ -170,7 +179,10 @@ function openPlayer(p) {
     ['İşçi', p.workers], ['Hayvan', p.animals], ['Depodaki kütük', big(p.logs)], ['Kesilen ağaç', big(p.trees)], ['Gönderilen kamyon', big(p.trucks)], ['Oynama süresi', hrs(p.playTime)],
     ['Premium / Reklamsız', p.premium || p.noAds ? 'Evet' : 'Hayır'], ['Platform', p.platform], ['Son görülme', dt(p.lastSeen)], ['Katılma', dt(p.createdAt)]]
     .map(([k, v]) => `<span>${k}</span><b>${esc(v ?? '—')}</b>`).join('') : '';
-  $('#dp-form').innerHTML = giftForm(); $('#dp-msg').textContent = '';
+  $('#dp-form').innerHTML = giftForm(); $('#dp-msg').textContent = ''; $('#dp-set-msg').textContent = '';
+  $('#dp-set-wrap').classList.toggle('hide', !p);
+  if (p) { $('#s-level').value = p.level ?? ''; $('#s-xp').value = ''; $('#s-gold').value = p.gold ?? ''; $('#s-money').value = p.money ?? ''; $('#s-msg').value = '';
+    $('#s-level').placeholder = p.level ?? ''; $('#s-gold').placeholder = p.gold ?? ''; $('#s-money').placeholder = p.money ?? ''; $('#s-xp').placeholder = p.xp ?? ''; }
   $('#dlg-player').showModal();
 }
 $('#gift-all').onclick = () => openPlayer(null);
@@ -192,12 +204,33 @@ $('#dp-send').onclick = async () => {
   $('#dp-send').disabled = false;
 };
 
+$('#dp-set').onclick = async () => {
+  if (!current) return;
+  const val = (id) => { const t = $(id).value.trim(); if (t === '') return null; const n = Math.floor(Number(t)); return isFinite(n) && n >= 0 ? n : NaN; };
+  const now = { level: current.level, xp: current.xp, gold: current.gold, money: current.money };
+  const set = {};
+  for (const k of ['level', 'xp', 'gold', 'money']) { const v = val('#s-' + k); if (Number.isNaN(v)) { $('#dp-set-msg').innerHTML = '<span class="err">Sadece 0 veya daha büyük tam sayı gir.</span>'; return; } if (v !== null && v !== now[k]) set[k] = v; }
+  if (set.level === 0) set.level = 1;
+  if (!Object.keys(set).length) { $('#dp-set-msg').innerHTML = '<span class="err">Değiştirilen bir değer yok.</span>'; return; }
+  const label = { level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' };
+  if (!confirm(`${pname(current)} için:\n` + Object.entries(set).map(([k, v]) => `${label[k]}: ${big(now[k])} → ${big(v)}`).join('\n') + '\n\nKaydedilsin mi?')) return;
+  $('#dp-set').disabled = true;
+  try {
+    await addDoc(collection(db, 'gifts'), { to: current.id, toName: pname(current), kind: 'set', set, msg: $('#s-msg').value.trim().slice(0, 140), createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid });
+    $('#dp-set-msg').innerHTML = '<span class="ok">Kaydedildi! Oyun açıksa birkaç saniye içinde, kapalıysa oyuncu açınca uygulanır. Listede yeni değer oyuncunun bir sonraki eşitlemesinde görünür.</span>';
+    loadGifts();
+  } catch (e) { $('#dp-set-msg').innerHTML = `<span class="err">Kaydedilemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#dp-set').disabled = false;
+};
+
 async function loadGifts() {
   try {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
     const label = { gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
     $('#gift-rows').innerHTML = snap.docs.map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
-      return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${Object.entries(g.items || {}).map(([k, v]) => `${big(v)} ${label[k] || k}`).join(', ')}</td>
+      const what = g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' })[k] || k} = ${big(v)}`).join(', ')
+        : Object.entries(g.items || {}).map(([k, v]) => `${big(v)} ${label[k] || k}`).join(', ');
+      return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
       <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';
   } catch (e) { $('#gift-rows').innerHTML = `<tr><td colspan="5" class="err">${esc(e.code || e.message)}</td></tr>`; }
 }
