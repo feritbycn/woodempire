@@ -25,6 +25,7 @@ import { LandExpansionSystem } from '../systems/LandExpansionSystem.js';
 import { ConstructionSystem } from '../systems/ConstructionSystem.js';
 import { MissionSystem } from '../systems/MissionSystem.js';
 import { DailyRewardSystem } from '../systems/DailyRewardSystem.js';
+import { CloudSystem } from '../systems/CloudSystem.js';
 import { ShopSystem } from '../systems/ShopSystem.js';
 import { AdsManager } from '../systems/AdsManager.js';
 import { AdOfferSystem } from '../systems/AdOfferSystem.js';
@@ -115,6 +116,7 @@ export class Game {
     this.imports = new ImportSystem(this);
     this.billing = new BillingManager(this);
     this.shop = new ShopSystem(this);
+    this.cloud = new CloudSystem(this);
 
     this.world.build();
     this.land.init();          // bölgeleri, ağaçları, istasyonları kurar (kayıttan)
@@ -184,6 +186,7 @@ export class Game {
     this.animals.update(dt);
     this.wood.update(dt);
     this.inventory.update(dt);
+    this.cloud.update(dt);
     this.production.update(dt);
     this.storage.update(dt);
     this.conveyors.update(dt);

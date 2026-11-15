@@ -36,5 +36,6 @@ export function defaultState() {
     autoXpRate: 0,
     created: Date.now(),
     playTime: 0,
+    cloud: { uid: null, name: null }, // bulut kimliği ve benzersiz kullanıcı adı
   };
 }

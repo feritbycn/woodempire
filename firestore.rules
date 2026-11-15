@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// WOOD EMPIRE — Firestore güvenlik kuralları
+// Firebase konsolu → Firestore Database → Rules sekmesine bu dosyanın tamamını yapıştırıp "Publish" deyin.
+//
+//   players/{uid}                  oyuncu özeti: yalnızca sahibi yazar; sahibi ve yöneticiler okur
+//   players/{uid}/claimed/{giftId} alınmış hediyeler: sahibi bir kez oluşturur, değiştirilemez
+//   usernames/{adKucukHarf}        benzersiz ad: bir kez oluşturulur, başkası alamaz, değiştirilemez
+//   gifts/{id}                     hediyeler: yalnızca yönetici yazar; alıcısı (veya herkes için olanı) okur
+//   admins/{uid}                   yöneticiler: konsoldan elle eklenir, oyundan/panelden yazılamaz
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+    function isAdmin() { return signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid)); }
+    function validName(n) { return n is string && n.size() >= 3 && n.size() <= 16; }
+
+    match /admins/{uid} {
+      allow read: if isMe(uid);
+      allow write: if false;
+    }
+
+    match /players/{uid} {
+      allow read: if isMe(uid) || isAdmin();
+      allow delete: if isMe(uid) || isAdmin();
+      // Oyuncu kendi özetini yazar. Ad (name/nameLower) değişiyorsa: daha önce adı olmamalı ve
+      // aynı anda usernames/{nameLower} kaydı bu oyuncu adına oluşturulmuş olmalı (getAfter = toplu yazmanın sonucu).
+      allow create, update: if isMe(uid)
+        && request.resource.data.keys().hasOnly(['name', 'nameLower', 'level', 'xp', 'money', 'gold', 'totalEarned', 'zones', 'zoneList',
+             'workers', 'animals', 'logs', 'trees', 'trucks', 'playTime', 'noAds', 'premium', 'platform', 'version', 'lastSeen', 'createdAt'])
+        && (
+          request.resource.data.get('nameLower', null) == (resource == null ? null : resource.data.get('nameLower', null))
+          || (
+            (resource == null || resource.data.get('nameLower', null) == null)
+            && validName(request.resource.data.name)
+            && getAfter(/databases/$(db)/documents/usernames/$(request.resource.data.nameLower)).data.uid == uid
+          )
+        );
+
+      match /claimed/{giftId} {
+        allow read: if isMe(uid) || isAdmin();
+        allow create: if isMe(uid) && exists(/databases/$(db)/documents/gifts/$(giftId));
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /usernames/{name} {
+      allow read: if signedIn();
+      // Yalnızca yoksa oluşturulur (create zaten var olan belgeye uygulanmaz) → aynı ad ikinci kez alınamaz.
+      // Aynı anda oyuncunun kendi kaydına da bu ad yazılmalı → bir oyuncu birden fazla ad kapatamaz.
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'at'])
+        && validName(request.resource.data.name)
+        && name.size() >= 3 && name.size() <= 16
+        && getAfter(/databases/$(db)/documents/players/$(request.auth.uid)).data.nameLower == name;
+      allow update: if false;
+      allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    match /gifts/{id} {
+      allow read: if isAdmin() || (signedIn() && (resource.data.to == request.auth.uid || resource.data.to == 'all'));
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

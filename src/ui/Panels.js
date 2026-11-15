@@ -415,9 +415,12 @@ export class Panels {
       <div class="set"><span>Grafik kalitesi</span><div class="seg">${[['low', 'Düşük'], ['medium', 'Orta'], ['high', 'Yüksek']].map(([k, n]) => `<button class="btn tiny ${s.quality === k ? 'on' : ''}" data-q="${k}">${n}</button>`).join('')}</div></div>
       <label class="set"><span>Titreşim</span><input type="checkbox" ${s.haptics ? 'checked' : ''} data-set="haptics"></label>
       <label class="set"><span>FPS göstergesi</span><input type="checkbox" ${s.showFps ? 'checked' : ''} data-set="showFps"></label>
+      <div class="set-info cloud-info">${g.cloud?.status === 'ok' ? `<b>${g.cloud.displayName()}</b> · Oyuncu kimliği ${g.cloud.shortId()}` : g.cloud?.status === 'loading' ? 'Buluta bağlanıyor…' : 'Bulut bağlantısı yok (oyun çevrimdışı da oynanır)'}</div>
+      ${g.cloud?.status === 'ok' && !g.state.cloud?.name ? `<button class="btn wide" data-x="pickname">Kullanıcı adı al</button>` : ''}
       <div class="set-info">Son kayıt: ${save?.ok ? new Date(save.at).toLocaleTimeString('tr-TR') + ` (#${save.n})` : '—'} · Sürüm 1.0.0</div>
       <div class="btn-row"><button class="btn green" data-x="save">Şimdi Kaydet</button><button class="btn" data-x="restore">Satın Alımları Geri Yükle</button></div>
       <button class="btn danger wide" data-x="reset">İlerlemeyi Sıfırla</button>
+      ${g.cloud?.status === 'ok' ? `<button class="btn wide" data-x="clouddel">Bulut verilerimi sil</button>` : ''}
       <div class="set-info legal"><a href="https://feritbycn.github.io/woodempire/privacy.html" target="_blank" rel="noopener">Gizlilik Politikası</a> · <a href="https://feritbycn.github.io/woodempire/terms.html" target="_blank" rel="noopener">Kullanım Şartları</a></div>
       <button class="btn wide" data-act="modal:close">Kapat</button></div>`);
     m.addEventListener('input', (e) => {
@@ -431,6 +434,11 @@ export class Panels {
       const x = e.target.closest('[data-x]')?.dataset.x;
       if (x === 'save') { await g.save.save(); this.ui.toast('Oyun kaydedildi', 'success'); }
       if (x === 'restore') g.billing.restore();
+      if (x === 'pickname') { m.close?.(); g.cloud.maybeAskName(true); }
+      if (x === 'clouddel') {
+        const c = this.ui.modal(`<div class="confirm"><h3>Bulut verilerin silinsin mi?</h3><p>Yönetim panelindeki oyuncu özetin ve kullanıcı adın silinir. Oyun ilerlemen bu telefonda kalır.</p><div class="btn-row"><button class="btn" data-act="modal:close">Vazgeç</button><button class="btn danger" data-y="1">Sil</button></div></div>`);
+        c.querySelector('[data-y]').addEventListener('click', async () => { const ok = await g.cloud.deleteCloudData(); c.close?.(); m.close?.(); this.ui.toast(ok ? 'Bulut verilerin silindi' : 'Silinemedi, internet bağlantını kontrol et', ok ? 'success' : 'error'); });
+      }
       if (x === 'reset') {
         const c = this.ui.modal(`<div class="confirm"><h3>Emin misin?</h3><p>Tüm ilerleme kalıcı olarak silinecek.</p><div class="btn-row"><button class="btn" data-act="modal:close">Vazgeç</button><button class="btn danger" data-y="1">Sıfırla</button></div></div>`);
         c.addEventListener('click', async (ev) => { if (ev.target.closest('[data-y]')) { g.ready = false; await g.save.reset(); location.reload(); } });

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Wood Empire Yönetim</title>
+<style>
+:root{--bg:#f4efe6;--card:#fffdf8;--ink:#33251a;--muted:#7a6250;--line:#e6dccb;--green:#2f6b2a;--green2:#43a047;--red:#c62828;--gold:#c98a00;--chip:#efe6d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17130f;--card:#221c16;--ink:#f1e7d8;--muted:#b9a58d;--line:#3a3027;--green:#7bc46f;--green2:#5fae55;--red:#ef6b6b;--gold:#e7b53c;--chip:#2e261e}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0;color:var(--green)}header .who{font-size:13px;color:var(--muted);text-align:right}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.stat b{display:block;font-size:24px;line-height:1.2;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--muted)}
+button,.btn{font:inherit;border:0;border-radius:10px;padding:9px 14px;background:var(--green2);color:#fff;font-weight:700;cursor:pointer}button.ghost{background:var(--chip);color:var(--ink)}button.danger{background:var(--red)}button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1 1 140px}
+.tbl-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-size:12px;color:var(--muted);font-weight:600;cursor:pointer;user-select:none}
+tr.p{cursor:pointer}tr.p:hover{background:var(--chip)}td.num{text-align:right}th.num{text-align:right}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--muted)}.tag.on{background:var(--green2);color:#fff}
+.muted{color:var(--muted);font-size:13px}.err{color:var(--red);font-weight:600}.ok{color:var(--green);font-weight:600}
+dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 24px);background:var(--card);color:var(--ink)}dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:16px 18px}.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:10px 0}.kv span{color:var(--muted)}
+.center{max-width:460px;margin:60px auto;text-align:center}code{background:var(--chip);padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button{background:var(--chip);color:var(--ink)}.tabs button.on{background:var(--green2);color:#fff}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>🌲 Wood Empire · Yönetim</h1><div class="who" id="who"></div></header>
+<main>
+  <!-- Giriş -->
+  <section id="v-login" class="center hide">
+    <div class="card"><h2>Yönetici girişi</h2><p class="muted">Bu sayfayı yalnızca yönetici olarak eklenen Google hesabı kullanabilir.</p>
+      <button id="btn-login">Google ile giriş yap</button><p id="login-msg" class="muted"></p></div>
+  </section>
+  <!-- Yetki yok -->
+  <section id="v-noadmin" class="center hide">
+    <div class="card"><h2>Bu hesap henüz yönetici değil</h2>
+      <p>Firebase konsolu → <b>Firestore Database</b> → <b>Start collection</b> → koleksiyon kimliği <code>admins</code> → belge kimliği olarak aşağıdaki UID'yi yapıştırın, bir alan ekleyin (ör. <code>ok</code> = true) ve kaydedin. Sonra bu sayfayı yenileyin.</p>
+      <p>Senin UID'n:<br><code id="my-uid"></code> <button class="ghost" id="copy-uid">Kopyala</button></p>
+      <button class="ghost" id="btn-logout2">Çıkış yap</button></div>
+  </section>
+  <!-- Panel -->
+  <section id="v-panel" class="hide">
+    <div class="stats" id="stats"></div>
+    <div class="tabs"><button class="on" data-tab="players">Oyuncular</button><button data-tab="gifts">Hediyeler</button></div>
+
+    <div id="t-players">
+      <div class="card">
+        <div class="row">
+          <div><label>Ara (kullanıcı adı veya kimlik)</label><input id="q" placeholder="ör. kereste veya A3F9C1"></div>
+          <div style="flex:0 0 auto"><button class="ghost" id="reload">Yenile</button></div>
+          <div style="flex:0 0 auto"><button id="gift-all">Herkese hediye</button></div>
+        </div>
+        <p class="muted" id="list-info"></p>
+        <div class="tbl-wrap"><table><thead><tr>
+          <th data-s="name">Oyuncu</th><th data-s="level" class="num">Seviye</th><th data-s="money" class="num">Para</th><th data-s="gold" class="num">Altın</th>
+          <th data-s="zones" class="num">Alan</th><th data-s="workers" class="num">İşçi</th><th data-s="playTime" class="num">Oynama</th><th data-s="lastSeen">Son görülme</th><th data-s="createdAt">Katılma</th>
+        </tr></thead><tbody id="rows"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="t-gifts" class="hide">
+      <div class="card"><h3 style="margin-top:0">Gönderilen hediyeler</h3><p class="muted">Bekleyen bir hediyeyi silersen henüz almamış oyuncular artık göremez.</p>
+        <div class="tbl-wrap"><table><thead><tr><th>Tarih</th><th>Alıcı</th><th>İçerik</th><th>Mesaj</th><th></th></tr></thead><tbody id="gift-rows"></tbody></table></div></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg-player"><div class="dlg">
+  <h2 id="dp-title" style="margin:0"></h2><div class="muted" id="dp-sub"></div>
+  <div class="kv" id="dp-kv"></div>
+  <h3>Hediye gönder</h3>
+  <div id="dp-form"></div>
+  <div class="row" style="margin-top:12px"><button class="ghost" id="dp-close">Kapat</button><button id="dp-send">Gönder</button></div>
+  <p id="dp-msg"></p>
+</div></dialog>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { getFirestore, collection, doc, getDoc, getDocs, query, orderBy, limit, where, addDoc, deleteDoc, serverTimestamp, Timestamp, getCountFromServer } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey: 'AIzaSyCvPap7oTyQtS4WkSU4Ugd5l5gA_4smQEE', authDomain: 'woodempire-37573.firebaseapp.com', projectId: 'woodempire-37573',
+  storageBucket: 'woodempire-37573.firebasestorage.app', messagingSenderId: '674111438478', appId: '1:674111438478:web:2b063ff9fd9fa6de2493df',
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = (s) => document.querySelector(s);
+const show = (id) => ['#v-login', '#v-noadmin', '#v-panel'].forEach((v) => $(v).classList.toggle('hide', v !== id));
+const nf = new Intl.NumberFormat('tr-TR');
+const big = (n) => { n = Number(n) || 0; const u = ['', 'B', 'M', 'Mr', 'T', 'Kt']; let i = 0; while (Math.abs(n) >= 1000 && i < u.length - 1) { n /= 1000; i++; } return i ? n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0).replace('.', ',') + ' ' + u[i] : nf.format(Math.round(n)); };
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ms = (t) => (t?.toMillis ? t.toMillis() : 0);
+const ago = (t) => { const m = ms(t); if (!m) return '—'; const s = (Date.now() - m) / 1000; if (s < 90) return 'şimdi'; if (s < 3600) return Math.round(s / 60) + ' dk önce'; if (s < 86400) return Math.round(s / 3600) + ' sa önce'; return Math.round(s / 86400) + ' gün önce'; };
+const dt = (t) => { const m = ms(t); return m ? new Date(m).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; };
+const hrs = (s) => { s = Number(s) || 0; return s < 3600 ? Math.round(s / 60) + ' dk' : (s / 3600).toFixed(1).replace('.', ',') + ' sa'; };
+const pname = (p) => p.name || `Oyuncu #${p.id.slice(0, 6).toUpperCase()}`;
+
+let players = [], sortKey = 'lastSeen', sortDir = -1, current = null;
+
+$('#btn-login').onclick = async () => {
+  const pv = new GoogleAuthProvider();
+  try { await signInWithPopup(auth, pv); } catch (e) { if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') await signInWithRedirect(auth, pv); else $('#login-msg').textContent = 'Giriş başarısız: ' + (e.code || e.message); }
+};
+$('#btn-logout2').onclick = () => signOut(auth);
+$('#copy-uid').onclick = () => navigator.clipboard?.writeText($('#my-uid').textContent);
+
+onAuthStateChanged(auth, async (u) => {
+  if (!u || u.isAnonymous) { $('#who').textContent = ''; show('#v-login'); return; }
+  $('#who').innerHTML = `${esc(u.email || '')}<br><a href="#" id="lo">Çıkış</a>`;
+  $('#lo').onclick = (e) => { e.preventDefault(); signOut(auth); };
+  let admin = false;
+  try { admin = (await getDoc(doc(db, 'admins', u.uid))).exists(); } catch {}
+  if (!admin) { $('#my-uid').textContent = u.uid; show('#v-noadmin'); return; }
+  show('#v-panel');
+  loadAll();
+});
+
+async function loadAll() {
+  $('#list-info').textContent = 'Yükleniyor…';
+  try {
+    const col = collection(db, 'players');
+    const day = Timestamp.fromMillis(Date.now() - 864e5), week = Timestamp.fromMillis(Date.now() - 7 * 864e5);
+    const [total, d1, d7, named, snap] = await Promise.all([
+      getCountFromServer(col), getCountFromServer(query(col, where('lastSeen', '>=', day))), getCountFromServer(query(col, where('lastSeen', '>=', week))),
+      getCountFromServer(query(col, where('nameLower', '!=', null))), getDocs(query(col, orderBy('lastSeen', 'desc'), limit(1000))),
+    ]);
+    players = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const avgLv = players.length ? players.reduce((a, p) => a + (p.level || 1), 0) / players.length : 0;
+    const gold = players.reduce((a, p) => a + (p.gold || 0), 0);
+    const st = [['Toplam oyuncu', nf.format(total.data().count)], ['Son 24 saat aktif', nf.format(d1.data().count)], ['Son 7 gün aktif', nf.format(d7.data().count)],
+      ['Kullanıcı adı alan', nf.format(named.data().count)], ['Ortalama seviye', avgLv.toFixed(1).replace('.', ',')], ['Oyunculardaki altın', big(gold)]];
+    $('#stats').innerHTML = st.map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');
+    renderPlayers();
+  } catch (e) { $('#list-info').innerHTML = `<span class="err">Okunamadı: ${esc(e.code || e.message)}</span> — firestore.rules yayınlandı mı?`; }
+}
+
+function renderPlayers() {
+  const q = $('#q').value.trim().toLocaleLowerCase('tr-TR');
+  let list = players.filter((p) => !q || (p.nameLower || '').includes(q) || p.id.toLowerCase().startsWith(q.toLowerCase()));
+  const val = (p) => sortKey === 'name' ? pname(p).toLocaleLowerCase('tr-TR') : (sortKey === 'lastSeen' || sortKey === 'createdAt') ? ms(p[sortKey]) : (p[sortKey] || 0);
+  list.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * sortDir);
+  $('#list-info').textContent = `${list.length} oyuncu gösteriliyor${players.length >= 1000 ? ' (en son görülen 1000 oyuncu)' : ''}`;
+  $('#rows').innerHTML = list.slice(0, 500).map((p) => `<tr class="p" data-id="${p.id}"><td><b>${esc(pname(p))}</b> ${p.noAds || p.premium ? '<span class="tag on">Premium</span>' : ''} <span class="tag">${esc(p.platform || '')}</span></td>
+    <td class="num">${p.level || 1}</td><td class="num">${big(p.money)}</td><td class="num">${big(p.gold)}</td><td class="num">${p.zones || 1}</td><td class="num">${p.workers || 0}</td>
+    <td class="num">${hrs(p.playTime)}</td><td>${ago(p.lastSeen)}</td><td>${dt(p.createdAt)}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">Oyuncu yok</td></tr>';
+}
+$('#q').oninput = renderPlayers;
+$('#reload').onclick = loadAll;
+document.querySelectorAll('th[data-s]').forEach((th) => th.onclick = () => { const k = th.dataset.s; sortDir = sortKey === k ? -sortDir : -1; sortKey = k; renderPlayers(); });
+$('#rows').onclick = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr) openPlayer(players.find((p) => p.id === tr.dataset.id)); };
+
+const giftForm = () => `<div class="row"><div><label>Altın</label><input type="number" min="0" id="g-gold" value="0"></div><div><label>Para</label><input type="number" min="0" id="g-money" value="0"></div></div>
+  <div class="row" style="margin-top:8px"><div><label>XP</label><input type="number" min="0" id="g-xp" value="0"></div><div><label>Kütük (Kütük Deposu'na)</label><input type="number" min="0" id="g-logs" value="0"></div></div>
+  <div style="margin-top:8px"><label>Mesaj (isteğe bağlı, oyuncuya gösterilir)</label><input id="g-msg" maxlength="140" placeholder="ör. Turnuva ödülün!"></div>
+  <div style="margin-top:8px"><label>Geçerlilik</label><select id="g-exp"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7" selected>7 gün</option><option value="30">30 gün</option></select></div>`;
+
+function openPlayer(p) {
+  current = p;
+  $('#dp-title').textContent = p ? pname(p) : 'Herkese hediye';
+  $('#dp-sub').textContent = p ? `Kimlik: ${p.id}` : 'Tüm oyuncular oyunu açtıklarında bir kez alır (yeni katılanlar dahil, geçerlilik süresince).';
+  $('#dp-kv').innerHTML = p ? [['Seviye', p.level], ['XP', big(p.xp)], ['Para', big(p.money)], ['Altın', big(p.gold)], ['Toplam kazanç', big(p.totalEarned)], ['Alan sayısı', p.zones],
+    ['İşçi', p.workers], ['Hayvan', p.animals], ['Depodaki kütük', big(p.logs)], ['Kesilen ağaç', big(p.trees)], ['Gönderilen kamyon', big(p.trucks)], ['Oynama süresi', hrs(p.playTime)],
+    ['Premium / Reklamsız', p.premium || p.noAds ? 'Evet' : 'Hayır'], ['Platform', p.platform], ['Son görülme', dt(p.lastSeen)], ['Katılma', dt(p.createdAt)]]
+    .map(([k, v]) => `<span>${k}</span><b>${esc(v ?? '—')}</b>`).join('') : '';
+  $('#dp-form').innerHTML = giftForm(); $('#dp-msg').textContent = '';
+  $('#dlg-player').showModal();
+}
+$('#gift-all').onclick = () => openPlayer(null);
+$('#dp-close').onclick = () => $('#dlg-player').close();
+$('#dp-send').onclick = async () => {
+  const n = (id) => Math.max(0, Math.floor(Number($(id).value) || 0));
+  const items = {}; for (const k of ['gold', 'money', 'xp', 'logs']) { const v = n('#g-' + k); if (v) items[k] = v; }
+  if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
+  const to = current ? current.id : 'all';
+  if (to === 'all' && !confirm('Bu hediye TÜM oyunculara gidecek. Emin misin?')) return;
+  const days = Number($('#g-exp').value);
+  $('#dp-send').disabled = true;
+  try {
+    await addDoc(collection(db, 'gifts'), { to, toName: current ? pname(current) : 'Herkes', items, msg: $('#g-msg').value.trim().slice(0, 140),
+      createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid, ...(days ? { expiresAt: Timestamp.fromMillis(Date.now() + days * 864e5) } : {}) });
+    $('#dp-msg').innerHTML = '<span class="ok">Gönderildi! Oyuncu oyunu açınca (açıksa en geç 5 dakika içinde) alır.</span>';
+    loadGifts();
+  } catch (e) { $('#dp-msg').innerHTML = `<span class="err">Gönderilemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#dp-send').disabled = false;
+};
+
+async function loadGifts() {
+  try {
+    const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
+    const label = { gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
+    $('#gift-rows').innerHTML = snap.docs.map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
+      return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${Object.entries(g.items || {}).map(([k, v]) => `${big(v)} ${label[k] || k}`).join(', ')}</td>
+      <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';
+  } catch (e) { $('#gift-rows').innerHTML = `<tr><td colspan="5" class="err">${esc(e.code || e.message)}</td></tr>`; }
+}
+$('#gift-rows').onclick = async (e) => { const id = e.target.dataset?.del; if (id && confirm('Hediye silinsin mi?')) { await deleteDoc(doc(db, 'gifts', id)); loadGifts(); } };
+document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#t-players').classList.toggle('hide', b.dataset.tab !== 'players'); $('#t-gifts').classList.toggle('hide', b.dataset.tab !== 'gifts');
+  if (b.dataset.tab === 'gifts') loadGifts();
+});
+</script>
+</body>
+</html>

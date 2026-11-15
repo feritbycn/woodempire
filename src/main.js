@@ -28,6 +28,7 @@ async function boot() {
   setTimeout(() => document.getElementById('loader').classList.add('done'), 250);
   setTimeout(() => ui.startupFlow(offlineSec), 450);
   game.save.requestSave();
+  game.cloud.init(); // bulut: isimsiz kimlik, oyuncu özeti, kullanıcı adı, hediyeler (hata oyunu durdurmaz)
 
   if (Capacitor.isNativePlatform()) setupNative(game, ui);
   exposeTestApi(game, ui);

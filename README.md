@@ -71,3 +71,9 @@ store/        Play Store simgesi ve öne çıkan görsel
 - Verilerimi sil: https://feritbycn.github.io/woodempire/delete-data.html
 - Sayfaların kaynağı `docs/site/` klasöründe; `main` dalına her gönderimde `.github/workflows/pages.yml` ile GitHub Pages'e yayınlanır.
 - Play Console'da doldurulacak bilgiler (Veri güvenliği formu, reklam kimliği, app-ads.txt): [docs/PLAY_STORE.md](docs/PLAY_STORE.md)
+
+## Yönetim paneli ve bulut
+- Panel: https://feritbycn.github.io/woodempire/admin/ (Google girişi, yalnızca `admins` koleksiyonundaki hesaplar)
+- Oyuncu listesi ve istatistikler, kişiye veya herkese hediye (altın, para, XP, kütük)
+- Oyun: isimsiz Firebase kimliği, 2. seviyede benzersiz kullanıcı adı, oyuncu özeti buluta
+- Kurulum ve veri yapısı: [docs/ADMIN.md](docs/ADMIN.md) · güvenlik kuralları: [firestore.rules](firestore.rules)

@@ -24,7 +24,11 @@
 | **Uygulama bilgisi ve performans → Kilitlenme günlükleri, Teşhis** | Toplanır, paylaşılır · Analiz, dolandırıcılık önleme |
 | **Cihaz veya diğer kimlikler → Cihaz kimlikleri (reklam kimliği)** | Toplanır, paylaşılır · Reklam, dolandırıcılık önleme |
 | **Finansal bilgi → Satın alma geçmişi** | Google Play işler; geliştirici sunucusu yok (doğrulama sunucusu kapalı) |
-| Kişisel bilgi (ad, e-posta, telefon), fotoğraf, kişiler, mesaj | Toplanmaz |
+| **Kişisel bilgi → Kullanıcı kimlikleri** (isimsiz oyuncu kimliği + oyun içi kullanıcı adı) | Toplanır, paylaşılmaz · Uygulama işlevselliği, Hesap yönetimi, Dolandırıcılık önleme · İsteğe bağlı değil (kimlik), ad isteğe bağlı |
+| **Uygulama etkinliği → Diğer uygulama etkinlikleri** (oyun özeti: seviye, para, altın, oynama süresi) | Toplanır, paylaşılmaz · Uygulama işlevselliği, Analiz |
+| Gerçek ad, e-posta, telefon, fotoğraf, kişiler, mesaj | Toplanmaz |
+
+Firebase verisi: Google Cloud (eur3, Avrupa). Kullanıcı oyunda **Ayarlar → Bulut verilerimi sil** ile siler.
 
 Not: Satın alma doğrulama sunucusu (`server/verify-purchase`) açılırsa bu form ve gizlilik politikası güncellenmelidir.
 
