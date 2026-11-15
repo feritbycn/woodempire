@@ -1,0 +1,20 @@
+{
+  "appId": "com.woodempire.game",
+  "appName": "Wood Empire",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#2f6b2a",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "backgroundColor": "#2f6b2a",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    }
+  }
+}

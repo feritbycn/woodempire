@@ -1,0 +1,934 @@
+{
+  "date": "2026-11-15T11:19:50.669Z",
+  "passed": 27,
+  "failed": 0,
+  "steps": [
+    {
+      "name": "Depo kuralı, işçi noktaları, bant satın alma noktası ve reklam teklifi",
+      "ok": true,
+      "ms": 14298,
+      "detail": {
+        "freshRejected": true,
+        "marked": true,
+        "depotLogAccepted": true,
+        "noTakeFromFeedingDepot": true,
+        "okHire": true,
+        "workers": [
+          0,
+          1
+        ],
+        "beltPad": true,
+        "offer": {
+          "boost": "helper",
+          "side": "left"
+        },
+        "boostStarted": "helper",
+        "screenshot": "docs/screenshots/34_reklam_teklifi.png"
+      }
+    },
+    {
+      "name": "Reklamla geçici yardımcı işçi + parası yetmeyen satın alma görevi",
+      "ok": true,
+      "ms": 20,
+      "detail": {
+        "came": [
+          "lumberjack"
+        ],
+        "savedTemp": false,
+        "left": 0,
+        "mission": {
+          "title": "İlk işçini al",
+          "value": 50,
+          "target": 100,
+          "money": true
+        },
+        "stillAfterMoney": "İlk işçini al"
+      }
+    },
+    {
+      "name": "Test kurulumu: hesaba para ve seviye ekle",
+      "ok": true,
+      "ms": 1125,
+      "detail": {
+        "money": 50027520,
+        "level": 60
+      }
+    },
+    {
+      "name": "Arazi genişletme: 1-9 arası tüm bölgeleri sırayla satın al",
+      "ok": true,
+      "ms": 35,
+      "detail": {
+        "bought": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "zones": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "walk": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "Sonsuz genişleme: 10. bölgeden itibaren tesisler (Süt, Tavuk, Kereste…) oluşur ve satın alınır",
+      "ok": true,
+      "ms": 40,
+      "detail": {
+        "z10": "Süt Çiftliği 1",
+        "cost10": 2000,
+        "ok10": true,
+        "z11": "Tavuk Çiftliği 1",
+        "known": 13,
+        "bonus": 1.03
+      }
+    },
+    {
+      "name": "Tüm inşaat alanlarını kur (makineler, depo, ofis, garaj, rampa)",
+      "ok": true,
+      "ms": 36,
+      "detail": {
+        "built": 10,
+        "sites": [
+          "depot1",
+          "saw_stock",
+          "saw",
+          "dock1",
+          "imp3",
+          "dock3",
+          "dock2",
+          "imp5",
+          "imp7",
+          "dock7",
+          "imp8",
+          "dock8",
+          "imp9",
+          "dock9",
+          "f10_depot",
+          "f10_m",
+          "f10_dock",
+          "sander",
+          "office",
+          "packer",
+          "warehouse",
+          "garage",
+          "saw5",
+          "palletizer",
+          "furniture",
+          "panelpress",
+          "autoline"
+        ]
+      }
+    },
+    {
+      "name": "Üretim zinciri: her makine girdiyle gerçek ürün üretir, girdisiz üretmez",
+      "ok": true,
+      "ms": 8390,
+      "detail": {
+        "saw": {
+          "out": 12,
+          "kind": "plank",
+          "wood": "oak"
+        },
+        "f10_m": {
+          "out": 14,
+          "kind": "bottle",
+          "wood": "pine"
+        },
+        "sander": {
+          "out": 8,
+          "kind": "sanded",
+          "wood": "birch"
+        },
+        "packer": {
+          "out": 8,
+          "kind": "package",
+          "wood": "cedar"
+        },
+        "saw5": {
+          "out": 12,
+          "kind": "plank",
+          "wood": "rare"
+        },
+        "palletizer": {
+          "out": 2,
+          "kind": "pallet",
+          "wood": "oak"
+        },
+        "furniture": {
+          "out": 4,
+          "kind": "furniture",
+          "wood": "pine"
+        },
+        "panelpress": {
+          "out": 2,
+          "kind": "panel",
+          "wood": "birch"
+        },
+        "autoline": {
+          "out": 24,
+          "kind": "package",
+          "wood": "cedar"
+        }
+      }
+    },
+    {
+      "name": "Tesisler: Süt, Tavuk, Kereste 2, Koyun, Arı — tesis işçileri ve bantlarıyla otomatik",
+      "ok": true,
+      "ms": 62343,
+      "detail": {
+        "animals": {
+          "start": {
+            "cows": 2,
+            "hens": 3
+          },
+          "after": {
+            "cows": 4,
+            "hens": 4
+          },
+          "saved": {
+            "10": 2,
+            "11": 1
+          },
+          "priceUp": true
+        },
+        "bought": [
+          true,
+          true,
+          true
+        ],
+        "names": [
+          "Süt Çiftliği 1",
+          "Tavuk Çiftliği 1",
+          "Kereste Fabrikası 2",
+          "Koyun Çiftliği 1",
+          "Arı Çiftliği 1"
+        ],
+        "sheep": 2,
+        "hives": 2,
+        "owned": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "hired": [
+          "10:farmer",
+          "10:carrier",
+          "10:loader",
+          "11:farmer",
+          "11:carrier",
+          "11:loader",
+          "13:farmer",
+          "13:carrier",
+          "13:loader",
+          "14:farmer",
+          "14:carrier",
+          "14:loader"
+        ],
+        "belts": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "cows": 4,
+        "hens": 4,
+        "sites12": [
+          "f12_depot",
+          "f12_m",
+          "f12_dock"
+        ],
+        "trees12": 36,
+        "milked": 10,
+        "milkDeposited": 16,
+        "bottles": 44,
+        "eggsDeposited": 15,
+        "cartons": 7,
+        "sheared": 6,
+        "yarn": 8,
+        "combs": 6,
+        "honey": 10,
+        "dock10": 6,
+        "dock11": 6,
+        "farmers": [
+          "deliver",
+          "deliver",
+          "deliver",
+          "find"
+        ],
+        "screenshots": [
+          "docs/screenshots/35_sut_ciftligi.png",
+          "docs/screenshots/36_tavuk_ciftligi.png",
+          "docs/screenshots/37_koyun_ciftligi.png",
+          "docs/screenshots/38_ari_ciftligi.png"
+        ]
+      }
+    },
+    {
+      "name": "Makine yükseltmeleri: hız, kapasite, kalite, bıçak (görsel), boyut",
+      "ok": true,
+      "ms": 6207,
+      "detail": {
+        "time": [
+          "2.20",
+          "1.86"
+        ],
+        "outCap": [
+          40,
+          40
+        ],
+        "planksPerLog": [
+          2,
+          4
+        ],
+        "blades": [
+          1,
+          3
+        ],
+        "plankValue": [
+          1,
+          "1.06"
+        ],
+        "scale": "1.12",
+        "screenshot": "docs/screenshots/20_testere_yukseltilmis.png"
+      }
+    },
+    {
+      "name": "İşçiler: oduncu ağaç keser ve depoya taşır",
+      "ok": true,
+      "ms": 27527,
+      "detail": {
+        "felled": 10,
+        "playerFelled": 0,
+        "deposited": 10,
+        "depot": 1,
+        "states": [
+          "milk",
+          "idle",
+          "idle",
+          "deliver",
+          "idle",
+          "idle",
+          "milk",
+          "idle",
+          "idle",
+          "milk",
+          "idle",
+          "idle",
+          "goTree",
+          "deliver"
+        ],
+        "screenshot": "docs/screenshots/21_isci_oduncu.png"
+      }
+    },
+    {
+      "name": "Odun sistemi: depo → (çıkış bandı) testere → stok, yükleyici stoktan kamyona",
+      "ok": true,
+      "ms": 24951,
+      "detail": {
+        "planks": 112,
+        "loaded": 3,
+        "sanded": 14,
+        "sanderIn": 0,
+        "dockStaging": 0,
+        "workers": [
+          "farmer:collect",
+          "carrier:idle",
+          "loader:idle",
+          "farmer:feed",
+          "carrier:idle",
+          "loader:idle",
+          "farmer:deliver",
+          "carrier:idle",
+          "loader:idle",
+          "farmer:deliver",
+          "carrier:idle",
+          "loader:idle",
+          "lumberjack:deliver",
+          "lumberjack:collect",
+          "carrier:drop",
+          "loader:drop"
+        ]
+      }
+    },
+    {
+      "name": "Konveyör bantları: 4 bant satın alınır, gerçek ürün taşır (paketleme kendi ithalatıyla)",
+      "ok": true,
+      "ms": 58430,
+      "detail": {
+        "onBelts": {
+          "c_depot_saw": 4,
+          "c_f10_in": 0,
+          "c_f10_out": 0,
+          "c_f11_in": 2,
+          "c_f11_out": 2,
+          "c_f13_in": 0,
+          "c_f13_out": 1,
+          "c_f14_in": 3,
+          "c_f14_out": 0,
+          "c_saw_sander": 29,
+          "c_z3_in": 21,
+          "c_z3_out": 3
+        },
+        "sanded": 53,
+        "packages": 83,
+        "delivered": 18,
+        "screenshot": "docs/screenshots/22_konveyor_hatti.png"
+      }
+    },
+    {
+      "name": "İthalatlı bölgeler: her bölge kendi malını ithal eder, önceki bölgelerden mal almaz",
+      "ok": true,
+      "ms": 38168,
+      "detail": {
+        "missing": [],
+        "crossRoutes": [],
+        "zoneRoutes": [
+          [],
+          [
+            "imp5>saw5"
+          ],
+          [
+            "imp7>palletizer",
+            "imp7>furniture"
+          ],
+          [
+            "imp8>panelpress"
+          ],
+          [
+            "imp9>autoline"
+          ]
+        ],
+        "prices": {
+          "sanded3": 1,
+          "log5": 2,
+          "sellPkg3": 6
+        },
+        "imported0": 837,
+        "spent0": 12237,
+        "stock": {
+          "imp3": 146,
+          "imp5": 150,
+          "imp7": 150,
+          "imp8": 150,
+          "imp9": 150
+        },
+        "imported": 863,
+        "spent": 12263,
+        "left": [
+          0,
+          1
+        ],
+        "logLeft": 1,
+        "screenshot": "docs/screenshots/39_ithalat_paketleme.png"
+      }
+    },
+    {
+      "name": "Forklift: garaj + forklift satın al, ürünleri gerçekten taşır, yakıt molası",
+      "ok": true,
+      "ms": 27971,
+      "detail": {
+        "state": "pick",
+        "trips": 2,
+        "carrying": 0,
+        "pos": [
+          "17.9",
+          "-9.6"
+        ],
+        "screenshot": "docs/screenshots/23_forklift.png"
+      }
+    },
+    {
+      "name": "Kamyon kademeleri, kuyruk ve satış",
+      "ok": true,
+      "ms": 16505,
+      "detail": {
+        "ok": [
+          true,
+          true,
+          true
+        ],
+        "tier": 3,
+        "queue": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        "caps": [
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ],
+          [
+            20,
+            20,
+            200
+          ]
+        ],
+        "shipped": 39,
+        "lastSale": {
+          "t": 1794741475264,
+          "amount": 52,
+          "n": 18,
+          "counts": {
+            "bottle": 18
+          },
+          "dock": "f10_dock"
+        },
+        "screenshot": "docs/screenshots/24_kamyon_kuyrugu.png"
+      }
+    },
+    {
+      "name": "Görevler: ana zincir ilerler, sonra sonsuz prosedürel görevler",
+      "ok": true,
+      "ms": 69,
+      "detail": {
+        "main": 41,
+        "generated": 48,
+        "sample": [
+          "320 paketli ürün sat",
+          "22 kamyon gönder",
+          "190 ağaç kes",
+          "Yeni arazi aç: Süt Çiftliği · Genişletme 1",
+          "527K para kazan",
+          "510 odun topla",
+          "65 palet üret",
+          "Yeni arazi aç: Süt Çiftliği · Genişletme 1",
+          "940 ürün üret",
+          "33 mobilya üret"
+        ],
+        "current": "320 paketli ürün sat"
+      }
+    },
+    {
+      "name": "Seviye sistemi sonsuz: büyük XP ile çok seviye atlanır",
+      "ok": true,
+      "ms": 1475,
+      "detail": {
+        "from": 60,
+        "to": 72,
+        "nextNeed": 159154
+      }
+    },
+    {
+      "name": "Günlük ödül, günlük görevler ve başarılar",
+      "ok": true,
+      "ms": 11,
+      "detail": {
+        "preClaimed": false,
+        "claim": true,
+        "again": false,
+        "quests": [
+          "81 ürün üret",
+          "3 makine yükselt",
+          "4 kamyon gönder"
+        ],
+        "achievementsClaimed": [
+          "trucks",
+          "lands",
+          "factory",
+          "money",
+          "produce",
+          "workers"
+        ],
+        "gold": [
+          4529,
+          4674
+        ]
+      }
+    },
+    {
+      "name": "Mağaza: altınla hızlandırma (üretim x2 gerçekten hızlandırır), görünüm, altın kamyon",
+      "ok": true,
+      "ms": 5,
+      "detail": {
+        "procTime": [
+          "1.86",
+          "0.93"
+        ],
+        "skin": true,
+        "golden": true,
+        "skinNow": "forest",
+        "saleMul": "1.46"
+      }
+    },
+    {
+      "name": "Reklam: ödüllü reklam akışı (web dev simülasyonu) — ödül yalnızca izlenince",
+      "ok": true,
+      "ms": 8170,
+      "detail": {
+        "rewarded": true,
+        "cancelledNoReward": true,
+        "screenshot": "docs/screenshots/25_reklam_simulasyonu.png"
+      }
+    },
+    {
+      "name": "Uygulama içi satın alma: web sürümünde güvenli şekilde kapalı (sahte satın alma yok)",
+      "ok": true,
+      "ms": 10504,
+      "detail": {
+        "status": "web",
+        "text": "Satın alma yalnızca Google Play sürümünde kullanılabilir.",
+        "enabledButtons": 0,
+        "screenshot": "docs/screenshots/26_magaza_paketler.png"
+      }
+    },
+    {
+      "name": "Menü ekran görüntüleri (Görevler, Arazi, İşçiler, Fabrika, Araçlar)",
+      "ok": true,
+      "ms": 35178,
+      "detail": {
+        "shots": [
+          "docs/screenshots/27_menu_gorevler.png",
+          "docs/screenshots/28_menu_arazi.png",
+          "docs/screenshots/29_menu_isciler.png",
+          "docs/screenshots/30_menu_fabrika.png",
+          "docs/screenshots/31_menu_araclar.png"
+        ]
+      }
+    },
+    {
+      "name": "Değerli Ağaç Ormanı ve sonsuz bölge görüntüsü",
+      "ok": true,
+      "ms": 17202,
+      "detail": {
+        "shots": [
+          "docs/screenshots/32_degerli_agac_ormani.png",
+          "docs/screenshots/33_sonsuz_bolge.png"
+        ]
+      }
+    },
+    {
+      "name": "İşçi görevleri, operatörler, çiftlik yemi ve XP yavaşlaması",
+      "ok": true,
+      "ms": 5834,
+      "detail": {
+        "role0": "lumberjack",
+        "ok": true,
+        "bad": false,
+        "t": [
+          "0.931",
+          "0.716"
+        ],
+        "v": [
+          "3.68",
+          "4.78"
+        ],
+        "hungryReady": 0,
+        "milkedWhileHungry": 0,
+        "bought": true,
+        "paid": 4,
+        "feedNow": 2,
+        "level": 72,
+        "xpGain": 30,
+        "roleName": "Tavuk Bakıcısı"
+      }
+    },
+    {
+      "name": "Alan genişletme: yeni arazi/fabrika açılmaz, Süt Çiftliği genişler (tek depo + tek rampa + tek makine hızlanır)",
+      "ok": true,
+      "ms": 8405,
+      "detail": {
+        "bought": true,
+        "name": "Süt Çiftliği · Genişletme 1",
+        "parent": 10,
+        "walk": true,
+        "cap": [
+          150,
+          200
+        ],
+        "mul": [
+          1,
+          110
+        ],
+        "newDocks": 0,
+        "newDepots": 0,
+        "built": true,
+        "routes": [],
+        "hire": [],
+        "d1cap": 350,
+        "screenshot": "docs/screenshots/40_alan_genisletme.png"
+      }
+    },
+    {
+      "name": "Geç oyun kaydı: işçiler, forklift, bantlar, kamyon yükü yeniden açılınca korunur",
+      "ok": true,
+      "ms": 9550,
+      "detail": {
+        "before": {
+          "workers": [
+            "farmer",
+            "carrier",
+            "loader",
+            "farmer",
+            "carrier",
+            "loader",
+            "farmer",
+            "carrier",
+            "loader",
+            "farmer",
+            "carrier",
+            "loader",
+            "lumberjack",
+            "lumberjack",
+            "carrier",
+            "loader",
+            "beltop"
+          ],
+          "forklifts": 1,
+          "belts": [
+            "c_depot_saw",
+            "c_f10_in",
+            "c_f10_out",
+            "c_f11_in",
+            "c_f11_out",
+            "c_f13_in",
+            "c_f13_out",
+            "c_f14_in",
+            "c_f14_out",
+            "c_saw_sander",
+            "c_z3_in",
+            "c_z3_out"
+          ],
+          "beltItems": 67,
+          "zones": 16,
+          "sites": [
+            "autoline",
+            "depot1",
+            "dock1",
+            "dock2",
+            "dock3",
+            "dock7",
+            "dock8",
+            "dock9",
+            "f10_depot",
+            "f10_dock",
+            "f10_m",
+            "f11_depot",
+            "f11_dock",
+            "f11_m",
+            "f12_depot",
+            "f12_dock",
+            "f12_m",
+            "f13_depot",
+            "f13_dock",
+            "f13_m",
+            "f14_depot",
+            "f14_dock",
+            "f14_m",
+            "furniture",
+            "garage",
+            "imp3",
+            "imp5",
+            "imp7",
+            "imp8",
+            "imp9",
+            "office",
+            "packer",
+            "palletizer",
+            "panelpress",
+            "sander",
+            "saw",
+            "saw5",
+            "saw_stock",
+            "warehouse"
+          ],
+          "tier": 3,
+          "sawUp": {
+            "speed": 2,
+            "capacity": 1,
+            "quality": 1,
+            "blades": 2,
+            "size": 1,
+            "stock": 0
+          },
+          "level": 72,
+          "skin": "forest"
+        },
+        "after": {
+          "workers": [
+            "farmer",
+            "carrier",
+            "loader",
+            "farmer",
+            "carrier",
+            "loader",
+            "farmer",
+            "carrier",
+            "loader",
+            "farmer",
+            "carrier",
+            "loader",
+            "lumberjack",
+            "lumberjack",
+            "carrier",
+            "loader",
+            "beltop"
+          ],
+          "forklifts": 1,
+          "belts": [
+            "c_depot_saw",
+            "c_f10_in",
+            "c_f10_out",
+            "c_f11_in",
+            "c_f11_out",
+            "c_f13_in",
+            "c_f13_out",
+            "c_f14_in",
+            "c_f14_out",
+            "c_saw_sander",
+            "c_z3_in",
+            "c_z3_out"
+          ],
+          "beltItems": 67,
+          "zones": 16,
+          "sites": [
+            "autoline",
+            "depot1",
+            "dock1",
+            "dock2",
+            "dock3",
+            "dock7",
+            "dock8",
+            "dock9",
+            "f10_depot",
+            "f10_dock",
+            "f10_m",
+            "f11_depot",
+            "f11_dock",
+            "f11_m",
+            "f12_depot",
+            "f12_dock",
+            "f12_m",
+            "f13_depot",
+            "f13_dock",
+            "f13_m",
+            "f14_depot",
+            "f14_dock",
+            "f14_m",
+            "furniture",
+            "garage",
+            "imp3",
+            "imp5",
+            "imp7",
+            "imp8",
+            "imp9",
+            "office",
+            "packer",
+            "palletizer",
+            "panelpress",
+            "sander",
+            "saw",
+            "saw5",
+            "saw_stock",
+            "warehouse"
+          ],
+          "tier": 3,
+          "sawUp": {
+            "speed": 2,
+            "capacity": 1,
+            "quality": 1,
+            "blades": 2,
+            "size": 1,
+            "stock": 0
+          },
+          "level": 72,
+          "skin": "forest"
+        }
+      }
+    },
+    {
+      "name": "Performans örneği (headless SwiftShader — gerçek cihaz değildir)",
+      "ok": true,
+      "ms": 3008,
+      "detail": {
+        "fpsSwiftShader": 32,
+        "drawCalls": 118,
+        "triangles": 427950,
+        "geometries": 318,
+        "textures": 13,
+        "workers": 17,
+        "trees": 641
+      }
+    }
+  ],
+  "pageErrors": []
+}

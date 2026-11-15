@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+scripts/.audio-tmp/
+scripts/.fonts/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/capacitor-cordova-android-plugins/build/
+*.keystore
+*.jks
+server/verify-purchase/node_modules/
+server/verify-purchase/*.json.key

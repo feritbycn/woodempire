@@ -1,0 +1,306 @@
+{
+  "date": "2026-11-15T14:45:53.909Z",
+  "url": "http://localhost:4173/",
+  "timeScale": 4,
+  "passed": 16,
+  "failed": 0,
+  "steps": [
+    {
+      "n": 1,
+      "name": "Oyuna gir (yükleme + hoş geldin ekranı)",
+      "ok": true,
+      "ms": 7823,
+      "detail": {
+        "screenshot": "docs/screenshots/01_hosgeldin.png"
+      }
+    },
+    {
+      "n": 2,
+      "name": "Karakteri dokunmatik joystick ile hareket ettir",
+      "ok": true,
+      "ms": 12740,
+      "detail": {
+        "from": [
+          "4.0",
+          "10.0"
+        ],
+        "to": [
+          "-15.9",
+          "-5.3"
+        ],
+        "moved": "25.12"
+      }
+    },
+    {
+      "n": 3,
+      "name": "Bir ağacı kes (kesme + devrilme animasyonu)",
+      "ok": true,
+      "ms": 15567,
+      "detail": {
+        "treeType": "pine",
+        "logsOnGround": 2,
+        "stumpPassable": true,
+        "screenshots": [
+          "docs/screenshots/03_agac_kesme.png",
+          "docs/screenshots/04_agac_devriliyor.png"
+        ]
+      }
+    },
+    {
+      "n": 4,
+      "name": "Odunları topla (sırtta görsel istif)",
+      "ok": true,
+      "ms": 8366,
+      "detail": {
+        "carrying": 2,
+        "capacity": 10,
+        "screenshot": "docs/screenshots/05_odun_toplama.png"
+      }
+    },
+    {
+      "n": 5,
+      "name": "Depoya taşı ve bırak",
+      "ok": true,
+      "ms": 10969,
+      "detail": {
+        "deposited": "0 → 2",
+        "screenshot": "docs/screenshots/06_depo.png"
+      }
+    },
+    {
+      "n": 6,
+      "name": "Depo testereyi kendiliğinden besler (depo çıkış bandı → testere)",
+      "ok": true,
+      "ms": 6,
+      "detail": {
+        "depot": 0,
+        "onBelt": 0,
+        "sawIn": 0,
+        "working": false
+      }
+    },
+    {
+      "n": 7,
+      "name": "Ürün oluştur (kütük → kereste)",
+      "ok": true,
+      "ms": 6022,
+      "detail": {
+        "planksProduced": 4,
+        "screenshot": "docs/screenshots/07_testere_uretim.png"
+      }
+    },
+    {
+      "n": 8,
+      "name": "Kamyonu yükle",
+      "ok": true,
+      "ms": 14228,
+      "detail": {
+        "truckLoad": 4,
+        "screenshot": "docs/screenshots/08_kamyon_yukleme.png"
+      }
+    },
+    {
+      "n": 9,
+      "name": "Satışı gerçekleştir (\"Gönder\" düğmesi) ve para kazan",
+      "ok": true,
+      "ms": 7041,
+      "detail": {
+        "money": "11 → 15",
+        "sale": {
+          "t": 1794753614024,
+          "amount": 4,
+          "n": 4,
+          "counts": {
+            "plank": 4
+          },
+          "dock": "dock1"
+        },
+        "screenshot": "docs/screenshots/09_satis_para.png"
+      }
+    },
+    {
+      "n": 10,
+      "name": "Ekonomi döngüsü: taşıma kapasitesi yükseltmesi için para biriktir",
+      "ok": true,
+      "ms": 133472,
+      "detail": {
+        "cycles": 5,
+        "money": 133
+      }
+    },
+    {
+      "n": 11,
+      "name": "Taşıma kapasitesini yükselt (Geliştirme menüsü)",
+      "ok": true,
+      "ms": 10830,
+      "detail": {
+        "capacity": "10 → 12",
+        "screenshot": "docs/screenshots/10_gelistirme_menusu.png"
+      }
+    },
+    {
+      "n": 12,
+      "name": "Yeni alan satın almak için seviye + para biriktir (görevler dahil)",
+      "ok": true,
+      "ms": 135927,
+      "detail": {
+        "cycles": 6,
+        "money": 387,
+        "level": 3,
+        "missionsCompleted": 5
+      }
+    },
+    {
+      "n": 13,
+      "name": "Yeni bir alan satın al (Küçük Kereste Fabrikası)",
+      "ok": true,
+      "ms": 22216,
+      "detail": {
+        "zones": [
+          0,
+          1
+        ],
+        "money": 87,
+        "screenshots": [
+          "docs/screenshots/11_arazi_satin_al.png",
+          "docs/screenshots/12_arazi_acildi.png"
+        ]
+      }
+    },
+    {
+      "n": 14,
+      "name": "Oyunu kaydet ve kapat",
+      "ok": true,
+      "ms": 3521,
+      "detail": {
+        "save": {
+          "ok": true,
+          "n": 49,
+          "bytes": 3106,
+          "at": 1794753924763
+        },
+        "snapshot": {
+          "money": 87,
+          "gold": 20,
+          "level": 3,
+          "xp": 98,
+          "zones": [
+            0,
+            1
+          ],
+          "cap": 12,
+          "capLvl": 1,
+          "depot": 0,
+          "sawIn": 0,
+          "sawOut": 0,
+          "carry": 0,
+          "mission": 5,
+          "trees": 11,
+          "sales": 6,
+          "x": 4,
+          "z": 12
+        }
+      }
+    },
+    {
+      "n": 15,
+      "name": "Yeniden aç ve ilerlemenin korunduğunu doğrula",
+      "ok": true,
+      "ms": 19295,
+      "detail": {
+        "restored": {
+          "money": 287,
+          "gold": 20,
+          "level": 3,
+          "xp": 98,
+          "zones": [
+            0,
+            1
+          ],
+          "cap": 12,
+          "capLvl": 1,
+          "depot": 0,
+          "sawIn": 0,
+          "sawOut": 0,
+          "carry": 0,
+          "mission": 5,
+          "trees": 11,
+          "sales": 6,
+          "x": 4,
+          "z": 12
+        },
+        "workersResumed": [],
+        "screenshot": "docs/screenshots/13_yeniden_acildi.png"
+      }
+    },
+    {
+      "n": 16,
+      "name": "Kayıt bozulmasına dayanıklılık (yuvalardan biri bozulunca)",
+      "ok": true,
+      "ms": 9834,
+      "detail": {
+        "corrupted": "we_save_b",
+        "loadedFromBackup": {
+          "level": 3,
+          "zones": [
+            0,
+            1
+          ],
+          "money": 287
+        }
+      }
+    }
+  ],
+  "pageErrors": [],
+  "lastInfo": {
+    "money": 287,
+    "gold": 20,
+    "level": 3,
+    "xp": 98,
+    "x": 4.000701741732593,
+    "z": 11.99726504331696,
+    "carry": 0,
+    "cap": 12,
+    "carryKinds": [],
+    "stats": {
+      "treesFelled": 11,
+      "moneyEarned": 612,
+      "missionsCompleted": 5,
+      "treesFelled_pine": 11,
+      "treesFelledByPlayer": 11,
+      "logsCollected": 22,
+      "logsDeposited": 22,
+      "produced_plank": 44,
+      "producedAny": 44,
+      "itemsLoaded": 44,
+      "trucksShipped": 6,
+      "itemsSold": 40,
+      "sold_plank": 40,
+      "moneySpent": 325,
+      "upgradesPlayer": 1,
+      "upgrades_player_capacity": 1,
+      "landsOwned": 1
+    },
+    "zones": [
+      0,
+      1
+    ],
+    "mission": {
+      "title": "Kereste kamyona yükle",
+      "hint": "Kesilmiş Odun Stoku'nun turuncu alanından keresteyi al, kamyon alanına bırak.",
+      "money": false,
+      "value": 9,
+      "target": 10,
+      "reward": {
+        "money": 30,
+        "xp": 20
+      },
+      "guide": "site:dock1",
+      "main": true,
+      "index": 5
+    },
+    "fps": 60,
+    "drawCalls": 126,
+    "triangles": 447299
+  }
+}

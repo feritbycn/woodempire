@@ -1,0 +1,840 @@
+{
+  "model": "Yaklaşık ilerleme modeli — gerçek oynanış verisi değildir",
+  "simulatedHours": 14,
+  "events": [
+    {
+      "min": 15.4,
+      "level": 4,
+      "event": "İlk işçi",
+      "cost": 100
+    },
+    {
+      "min": 33.7,
+      "level": 5,
+      "event": "Arazi 1: Küçük Kereste Fabrikası",
+      "cost": 300
+    },
+    {
+      "min": 44.2,
+      "level": 5,
+      "event": "Kuruldu: sander",
+      "cost": 250
+    },
+    {
+      "min": 63.3,
+      "level": 6,
+      "event": "Kuruldu: office",
+      "cost": 450
+    },
+    {
+      "min": 110.5,
+      "level": 8,
+      "event": "Arazi 2: Geniş Orman Alanı",
+      "cost": 1500
+    },
+    {
+      "min": 131.1,
+      "level": 9,
+      "event": "Arazi 10: Süt Çiftliği 1",
+      "cost": 2000
+    },
+    {
+      "min": 184.7,
+      "level": 11,
+      "event": "Kamyon: Orta Kamyon",
+      "cost": 2500
+    },
+    {
+      "min": 195.3,
+      "level": 11,
+      "event": "Arazi 3: Endüstriyel Üretim Bölgesi",
+      "cost": 5000
+    },
+    {
+      "min": 202,
+      "level": 11,
+      "event": "Kuruldu: packer",
+      "cost": 3000
+    },
+    {
+      "min": 238.8,
+      "level": 13,
+      "event": "Arazi 11: Tavuk Çiftliği 1",
+      "cost": 8000
+    },
+    {
+      "min": 273.9,
+      "level": 14,
+      "event": "Arazi 4: Büyük Depolama Merkezi",
+      "cost": 12000
+    },
+    {
+      "min": 275.3,
+      "level": 14,
+      "event": "Kuruldu: garage",
+      "cost": 4000
+    },
+    {
+      "min": 278.3,
+      "level": 14,
+      "event": "Kuruldu: warehouse",
+      "cost": 8000
+    },
+    {
+      "min": 396.4,
+      "level": 17,
+      "event": "Arazi 5: Lojistik ve Kamyon Merkezi",
+      "cost": 30000
+    },
+    {
+      "min": 400.3,
+      "level": 17,
+      "event": "Kuruldu: saw5",
+      "cost": 6000
+    },
+    {
+      "min": 415.6,
+      "level": 17,
+      "event": "Arazi 12: Kereste Fabrikası 2",
+      "cost": 30000
+    },
+    {
+      "min": 451.9,
+      "level": 18,
+      "event": "Kamyon: Büyük Kamyon",
+      "cost": 20000
+    },
+    {
+      "min": 575.2,
+      "level": 21,
+      "event": "Arazi 6: Değerli Ağaç Ormanı",
+      "cost": 70000
+    },
+    {
+      "min": 605.4,
+      "level": 21,
+      "event": "Arazi 13: Koyun Çiftliği 1",
+      "cost": 78000
+    },
+    {
+      "min": 751.1,
+      "level": 24,
+      "event": "Arazi 7: Mobilya ve Palet Tesisi",
+      "cost": 150000
+    },
+    {
+      "min": 762.6,
+      "level": 24,
+      "event": "Kuruldu: palletizer",
+      "cost": 60000
+    },
+    {
+      "min": 772.7,
+      "level": 24,
+      "event": "Kuruldu: furniture",
+      "cost": 90000
+    },
+    {
+      "min": 830.9,
+      "level": 25,
+      "event": "Arazi 14: Arı Çiftliği 1",
+      "cost": 202800
+    }
+  ],
+  "samples": [
+    {
+      "min": 0,
+      "level": 1,
+      "money": 1,
+      "incomePerMin": 40,
+      "workers": 0,
+      "zones": 1
+    },
+    {
+      "min": 10,
+      "level": 3,
+      "money": 31,
+      "incomePerMin": 34,
+      "workers": 0,
+      "zones": 1
+    },
+    {
+      "min": 20,
+      "level": 4,
+      "money": 93,
+      "incomePerMin": 58,
+      "workers": 1,
+      "zones": 1
+    },
+    {
+      "min": 30,
+      "level": 5,
+      "money": 64,
+      "incomePerMin": 65,
+      "workers": 2,
+      "zones": 1
+    },
+    {
+      "min": 40,
+      "level": 5,
+      "money": 122,
+      "incomePerMin": 106,
+      "workers": 2,
+      "zones": 2
+    },
+    {
+      "min": 50,
+      "level": 6,
+      "money": 177,
+      "incomePerMin": 190,
+      "workers": 5,
+      "zones": 2
+    },
+    {
+      "min": 60,
+      "level": 6,
+      "money": 97,
+      "incomePerMin": 206,
+      "workers": 7,
+      "zones": 2
+    },
+    {
+      "min": 70,
+      "level": 6,
+      "money": 225,
+      "incomePerMin": 206,
+      "workers": 7,
+      "zones": 2
+    },
+    {
+      "min": 80,
+      "level": 7,
+      "money": 16,
+      "incomePerMin": 331,
+      "workers": 8,
+      "zones": 2
+    },
+    {
+      "min": 90,
+      "level": 7,
+      "money": 61,
+      "incomePerMin": 331,
+      "workers": 8,
+      "zones": 2
+    },
+    {
+      "min": 100,
+      "level": 8,
+      "money": 792,
+      "incomePerMin": 378,
+      "workers": 10,
+      "zones": 2
+    },
+    {
+      "min": 110,
+      "level": 8,
+      "money": 1317,
+      "incomePerMin": 396,
+      "workers": 11,
+      "zones": 2
+    },
+    {
+      "min": 120,
+      "level": 8,
+      "money": 220,
+      "incomePerMin": 471,
+      "workers": 11,
+      "zones": 3
+    },
+    {
+      "min": 130,
+      "level": 9,
+      "money": 1367,
+      "incomePerMin": 589,
+      "workers": 13,
+      "zones": 3
+    },
+    {
+      "min": 140,
+      "level": 9,
+      "money": 99,
+      "incomePerMin": 829,
+      "workers": 14,
+      "zones": 4
+    },
+    {
+      "min": 150,
+      "level": 9,
+      "money": 580,
+      "incomePerMin": 923,
+      "workers": 14,
+      "zones": 4
+    },
+    {
+      "min": 160,
+      "level": 10,
+      "money": 297,
+      "incomePerMin": 940,
+      "workers": 16,
+      "zones": 4
+    },
+    {
+      "min": 170,
+      "level": 10,
+      "money": 313,
+      "incomePerMin": 940,
+      "workers": 17,
+      "zones": 4
+    },
+    {
+      "min": 180,
+      "level": 10,
+      "money": 1987,
+      "incomePerMin": 1056,
+      "workers": 17,
+      "zones": 4
+    },
+    {
+      "min": 190,
+      "level": 11,
+      "money": 686,
+      "incomePerMin": 1271,
+      "workers": 17,
+      "zones": 4
+    },
+    {
+      "min": 200,
+      "level": 11,
+      "money": 447,
+      "incomePerMin": 1280,
+      "workers": 17,
+      "zones": 5
+    },
+    {
+      "min": 210,
+      "level": 11,
+      "money": 496,
+      "incomePerMin": 1929,
+      "workers": 17,
+      "zones": 5
+    },
+    {
+      "min": 220,
+      "level": 12,
+      "money": 2036,
+      "incomePerMin": 2026,
+      "workers": 19,
+      "zones": 5
+    },
+    {
+      "min": 230,
+      "level": 12,
+      "money": 1773,
+      "incomePerMin": 2198,
+      "workers": 20,
+      "zones": 5
+    },
+    {
+      "min": 240,
+      "level": 13,
+      "money": 1037,
+      "incomePerMin": 2567,
+      "workers": 20,
+      "zones": 6
+    },
+    {
+      "min": 250,
+      "level": 13,
+      "money": 3005,
+      "incomePerMin": 2691,
+      "workers": 20,
+      "zones": 6
+    },
+    {
+      "min": 260,
+      "level": 13,
+      "money": 5763,
+      "incomePerMin": 2713,
+      "workers": 20,
+      "zones": 6
+    },
+    {
+      "min": 270,
+      "level": 14,
+      "money": 1296,
+      "incomePerMin": 2743,
+      "workers": 22,
+      "zones": 6
+    },
+    {
+      "min": 280,
+      "level": 14,
+      "money": 5143,
+      "incomePerMin": 2811,
+      "workers": 22,
+      "zones": 7
+    },
+    {
+      "min": 290,
+      "level": 14,
+      "money": 2036,
+      "incomePerMin": 2949,
+      "workers": 23,
+      "zones": 7
+    },
+    {
+      "min": 300,
+      "level": 15,
+      "money": 2255,
+      "incomePerMin": 3062,
+      "workers": 23,
+      "zones": 7
+    },
+    {
+      "min": 310,
+      "level": 15,
+      "money": 2610,
+      "incomePerMin": 3086,
+      "workers": 23,
+      "zones": 7
+    },
+    {
+      "min": 320,
+      "level": 15,
+      "money": 8395,
+      "incomePerMin": 3120,
+      "workers": 23,
+      "zones": 7
+    },
+    {
+      "min": 330,
+      "level": 15,
+      "money": 1395,
+      "incomePerMin": 3148,
+      "workers": 25,
+      "zones": 7
+    },
+    {
+      "min": 340,
+      "level": 16,
+      "money": 4103,
+      "incomePerMin": 3210,
+      "workers": 25,
+      "zones": 7
+    },
+    {
+      "min": 350,
+      "level": 16,
+      "money": 3496,
+      "incomePerMin": 3292,
+      "workers": 26,
+      "zones": 7
+    },
+    {
+      "min": 360,
+      "level": 16,
+      "money": 1686,
+      "incomePerMin": 3329,
+      "workers": 26,
+      "zones": 7
+    },
+    {
+      "min": 370,
+      "level": 16,
+      "money": 11267,
+      "incomePerMin": 3329,
+      "workers": 26,
+      "zones": 7
+    },
+    {
+      "min": 380,
+      "level": 17,
+      "money": 12864,
+      "incomePerMin": 3451,
+      "workers": 26,
+      "zones": 7
+    },
+    {
+      "min": 390,
+      "level": 17,
+      "money": 7873,
+      "incomePerMin": 3482,
+      "workers": 26,
+      "zones": 7
+    },
+    {
+      "min": 400,
+      "level": 17,
+      "money": 4955,
+      "incomePerMin": 3609,
+      "workers": 26,
+      "zones": 8
+    },
+    {
+      "min": 410,
+      "level": 17,
+      "money": 3379,
+      "incomePerMin": 4811,
+      "workers": 26,
+      "zones": 8
+    },
+    {
+      "min": 420,
+      "level": 18,
+      "money": 5927,
+      "incomePerMin": 5786,
+      "workers": 26,
+      "zones": 9
+    },
+    {
+      "min": 430,
+      "level": 18,
+      "money": 3792,
+      "incomePerMin": 5966,
+      "workers": 26,
+      "zones": 9
+    },
+    {
+      "min": 440,
+      "level": 18,
+      "money": 15607,
+      "incomePerMin": 6004,
+      "workers": 28,
+      "zones": 9
+    },
+    {
+      "min": 450,
+      "level": 18,
+      "money": 8723,
+      "incomePerMin": 6046,
+      "workers": 28,
+      "zones": 9
+    },
+    {
+      "min": 460,
+      "level": 18,
+      "money": 16567,
+      "incomePerMin": 6466,
+      "workers": 28,
+      "zones": 9
+    },
+    {
+      "min": 470,
+      "level": 19,
+      "money": 2943,
+      "incomePerMin": 6609,
+      "workers": 29,
+      "zones": 9
+    },
+    {
+      "min": 480,
+      "level": 19,
+      "money": 308,
+      "incomePerMin": 6707,
+      "workers": 29,
+      "zones": 9
+    },
+    {
+      "min": 490,
+      "level": 19,
+      "money": 4390,
+      "incomePerMin": 6823,
+      "workers": 29,
+      "zones": 9
+    },
+    {
+      "min": 500,
+      "level": 19,
+      "money": 5285,
+      "incomePerMin": 7108,
+      "workers": 29,
+      "zones": 9
+    },
+    {
+      "min": 510,
+      "level": 19,
+      "money": 7221,
+      "incomePerMin": 7134,
+      "workers": 29,
+      "zones": 9
+    },
+    {
+      "min": 520,
+      "level": 20,
+      "money": 16041,
+      "incomePerMin": 7172,
+      "workers": 30,
+      "zones": 9
+    },
+    {
+      "min": 530,
+      "level": 20,
+      "money": 3357,
+      "incomePerMin": 7172,
+      "workers": 31,
+      "zones": 9
+    },
+    {
+      "min": 540,
+      "level": 20,
+      "money": 13174,
+      "incomePerMin": 7282,
+      "workers": 31,
+      "zones": 9
+    },
+    {
+      "min": 550,
+      "level": 20,
+      "money": 13956,
+      "incomePerMin": 7412,
+      "workers": 31,
+      "zones": 9
+    },
+    {
+      "min": 560,
+      "level": 20,
+      "money": 20839,
+      "incomePerMin": 7412,
+      "workers": 32,
+      "zones": 9
+    },
+    {
+      "min": 570,
+      "level": 21,
+      "money": 31514,
+      "incomePerMin": 7525,
+      "workers": 32,
+      "zones": 9
+    },
+    {
+      "min": 580,
+      "level": 21,
+      "money": 38459,
+      "incomePerMin": 7875,
+      "workers": 32,
+      "zones": 10
+    },
+    {
+      "min": 590,
+      "level": 21,
+      "money": 1297,
+      "incomePerMin": 7927,
+      "workers": 32,
+      "zones": 10
+    },
+    {
+      "min": 600,
+      "level": 21,
+      "money": 34919,
+      "incomePerMin": 7968,
+      "workers": 32,
+      "zones": 10
+    },
+    {
+      "min": 610,
+      "level": 21,
+      "money": 15991,
+      "incomePerMin": 11594,
+      "workers": 32,
+      "zones": 11
+    },
+    {
+      "min": 620,
+      "level": 22,
+      "money": 10930,
+      "incomePerMin": 12494,
+      "workers": 32,
+      "zones": 11
+    },
+    {
+      "min": 630,
+      "level": 22,
+      "money": 35532,
+      "incomePerMin": 12934,
+      "workers": 32,
+      "zones": 11
+    },
+    {
+      "min": 640,
+      "level": 22,
+      "money": 20078,
+      "incomePerMin": 13165,
+      "workers": 32,
+      "zones": 11
+    },
+    {
+      "min": 650,
+      "level": 22,
+      "money": 38283,
+      "incomePerMin": 13207,
+      "workers": 33,
+      "zones": 11
+    },
+    {
+      "min": 660,
+      "level": 22,
+      "money": 37205,
+      "incomePerMin": 13207,
+      "workers": 34,
+      "zones": 11
+    },
+    {
+      "min": 670,
+      "level": 22,
+      "money": 47822,
+      "incomePerMin": 13625,
+      "workers": 34,
+      "zones": 11
+    },
+    {
+      "min": 680,
+      "level": 23,
+      "money": 10670,
+      "incomePerMin": 13806,
+      "workers": 34,
+      "zones": 11
+    },
+    {
+      "min": 690,
+      "level": 23,
+      "money": 18591,
+      "incomePerMin": 13806,
+      "workers": 35,
+      "zones": 11
+    },
+    {
+      "min": 700,
+      "level": 23,
+      "money": 40999,
+      "incomePerMin": 13806,
+      "workers": 35,
+      "zones": 11
+    },
+    {
+      "min": 710,
+      "level": 23,
+      "money": 32439,
+      "incomePerMin": 14056,
+      "workers": 35,
+      "zones": 11
+    },
+    {
+      "min": 720,
+      "level": 23,
+      "money": 55903,
+      "incomePerMin": 14084,
+      "workers": 35,
+      "zones": 11
+    },
+    {
+      "min": 730,
+      "level": 23,
+      "money": 57035,
+      "incomePerMin": 14129,
+      "workers": 35,
+      "zones": 11
+    },
+    {
+      "min": 740,
+      "level": 23,
+      "money": 72212,
+      "incomePerMin": 14579,
+      "workers": 35,
+      "zones": 11
+    },
+    {
+      "min": 750,
+      "level": 24,
+      "money": 134931,
+      "incomePerMin": 14644,
+      "workers": 35,
+      "zones": 11
+    },
+    {
+      "min": 760,
+      "level": 24,
+      "money": 23172,
+      "incomePerMin": 14644,
+      "workers": 35,
+      "zones": 12
+    },
+    {
+      "min": 770,
+      "level": 24,
+      "money": 51921,
+      "incomePerMin": 14644,
+      "workers": 35,
+      "zones": 12
+    },
+    {
+      "min": 780,
+      "level": 24,
+      "money": 15930,
+      "incomePerMin": 26679,
+      "workers": 35,
+      "zones": 12
+    },
+    {
+      "min": 790,
+      "level": 24,
+      "money": 9582,
+      "incomePerMin": 26731,
+      "workers": 36,
+      "zones": 12
+    },
+    {
+      "min": 800,
+      "level": 24,
+      "money": 87646,
+      "incomePerMin": 26881,
+      "workers": 37,
+      "zones": 12
+    },
+    {
+      "min": 810,
+      "level": 24,
+      "money": 71143,
+      "incomePerMin": 27009,
+      "workers": 37,
+      "zones": 12
+    },
+    {
+      "min": 820,
+      "level": 25,
+      "money": 8127,
+      "incomePerMin": 27198,
+      "workers": 38,
+      "zones": 12
+    },
+    {
+      "min": 830,
+      "level": 25,
+      "money": 179080,
+      "incomePerMin": 27198,
+      "workers": 38,
+      "zones": 12
+    }
+  ],
+  "longestWaitBetweenPurchasesMin": 10,
+  "final": {
+    "level": 25,
+    "zones": [
+      0,
+      1,
+      2,
+      10,
+      3,
+      11,
+      4,
+      5,
+      12,
+      6,
+      13,
+      7,
+      14
+    ],
+    "earned": 6263400,
+    "workers": 38,
+    "tier": "Büyük Kamyon"
+  }
+}

@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Wood Empire</string>
+    <string name="title_activity_main">Wood Empire</string>
+    <string name="package_name">com.woodempire.game</string>
+    <string name="custom_url_scheme">com.woodempire.game</string>
+    <string name="admob_app_id">ca-app-pub-4446596500153010~6267475467</string>
+</resources>

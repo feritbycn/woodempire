@@ -1,0 +1,106 @@
+name: Android Build (APK + AAB)
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Oynanış testleri (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Playwright Chromium kur
+        run: npx playwright install --with-deps chromium
+      - name: Önizleme sunucusunu başlat
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          npx wait-on -t 60000 http://localhost:4173/
+      - name: Uçtan uca oynanış testi (Bölüm 30 senaryosu)
+        run: WE_SCALE=1 node tests/playtest.mjs
+      - name: Sistem entegrasyon testi
+        run: WE_SCALE=1 node tests/systems-test.mjs
+      - name: Ekonomi simülasyonu
+        run: node tests/economy-sim.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            tests/report/
+            docs/screenshots/
+
+  android:
+    name: Android derlemesi
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Web sürümünü derle
+        run: npm run build
+      - name: Capacitor senkronizasyonu
+        run: npx cap sync android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Yükleme anahtarını çöz (Secrets tanımlıysa)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.keystore" >> "$GITHUB_ENV"
+            echo "İmzalı sürüm derlenecek."
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 tanımlı değil — release APK/AAB İMZASIZ üretilecek (Play Store'a yüklenemez). docs/BUILD.md"
+          fi
+      - name: Gradle derlemesi (debug APK, release APK, release AAB)
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug assembleRelease bundleRelease
+      - name: Çıktıları topla
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/*.apk out/WoodEmpire-debug.apk
+          cp android/app/build/outputs/apk/release/*.apk out/ 2>/dev/null || true
+          cp android/app/build/outputs/bundle/release/*.aab out/WoodEmpire-release.aab
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wood-empire-android
+          path: out/
+      - name: Sürüm yayınla (etiketli push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*

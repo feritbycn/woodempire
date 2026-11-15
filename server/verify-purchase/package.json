@@ -1,0 +1,10 @@
+{
+  "name": "wood-empire-verify-purchase",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Google Play satın alma doğrulama sunucusu (cordova-plugin-purchase validator sözleşmesi)",
+  "main": "index.mjs",
+  "scripts": { "start": "node index.mjs" },
+  "dependencies": { "google-auth-library": "9.15.1" }
+}
