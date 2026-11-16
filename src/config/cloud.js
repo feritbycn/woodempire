@@ -12,6 +12,7 @@ export const FIREBASE = {
 };
 
 export const CLOUD = {
+  backupEvery: 120,     // sn — tam kayıt yedeği (yalnızca değiştiyse yazılır); hesap aktarımı en güncel hâli taşısın
   syncEvery: 300,       // sn — oyuncu özeti buluta bu aralıkla yazılır (ayrıca seviye atlayınca, arka plana geçince); ücretsiz Firebase kotasına göre
   giftCheckEvery: 300,  // sn — yeni hediye kontrolü (ayrıca oyun açılınca)
   nameLevel: 2,         // bu seviyeden itibaren kullanıcı adı sorulur

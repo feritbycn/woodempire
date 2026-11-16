@@ -66,6 +66,8 @@ export class CloudSystem {
     this.syncT -= dt; this.giftT -= dt;
     if (this.syncT <= 0) { this.syncT = CLOUD.syncEvery; this.sync(); }
     if (this.giftT <= 0) { this.giftT = CLOUD.giftCheckEvery; this.checkGifts(); }
+    this.backupT = (this.backupT ?? CLOUD.backupEvery) - dt;
+    if (this.backupT <= 0) { this.backupT = CLOUD.backupEvery; this.backup(); }
     // zorunlu ad: pencere herhangi bir şekilde kapanmışsa yeniden aç
     this.nameT = (this.nameT || 0) - dt;
     if (this.nameT <= 0) { this.nameT = 5; if (this.needsName()) this.maybeAskName(); }
@@ -235,6 +237,7 @@ export class CloudSystem {
       for (const d of list) {
         this.shownGift.add(d.id);
         const x = d.data();
+        if (x.kind === 'backup') { if (x.to === this.uid) this.applyBackupRequest(d.id); continue; }
         if (x.kind === 'rename') { if (x.to === this.uid) this.applyRename(d.id, x); continue; }
         if (x.kind === 'restore') { if (x.to === this.uid && x.save) this.applyRestore(d.id, x); continue; }
         if (x.kind === 'set') this.applySet(d.id, x); else this.showGift(d.id, x); // yönetici düzenlemesi pencere açmadan uygulanır
@@ -247,6 +250,14 @@ export class CloudSystem {
   /** YÖNETİCİ DÜZENLEMESİ: panelden seviye / altın / para / XP doğrudan ayarlanır (ekleme değil, yeni değer).
    *  Önce "alındı" kaydı yazılır → aynı düzenleme ikinci kez uygulanmaz. */
   /** Yönetici kullanıcı adını değiştirdi (veya hesap aktarımında ad başka hesaba geçti → ad boşalır, yenisi sorulur). */
+  /** Yönetici hesap aktarımından önce en güncel kaydı istedi: hemen yedekle (oyuncuya bir şey gösterilmez). */
+  async applyBackupRequest(id) {
+    const F = this.F;
+    try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); } catch {}
+    this.lastBackupSig = null;
+    await this.backup();
+  }
+
   async applyRename(id, x) {
     const F = this.F; const g = this.game;
     try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }

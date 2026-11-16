@@ -108,7 +108,7 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <div id="x-target" style="margin-top:8px"></div>
     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-weight:600"><input type="checkbox" id="x-name" checked style="width:auto;margin-top:3px"><span id="x-name-lbl">Kullanıcı adını da taşı</span></label>
     <div style="margin-top:8px"><label>Not (isteğe bağlı, hedef oyuncuya gösterilir)</label><input id="x-msg-in" maxlength="140" placeholder="ör. Eski telefonundaki hesabın taşındı"></div>
-    <p class="muted" style="margin:8px 0 0">Kaynak hesabın tüm oyun ilerlemesi (seviye, para, altın, alanlar, işçiler, makineler…) hedef hesaba <b>kopyalanır</b>. Hedef hesabın kendi ilerlemesi <b>silinir</b>. <b>"Kullanıcı adını da taşı"</b> seçiliyse kaynağın adı hedefe geçer (hedefin eski adı serbest kalır, kaynak hesap adsız kalır ve oyunu açınca yeni ad seçer); seçili değilse herkes kendi adını korur. Hedef oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır ve oyun yeniden başlar.</p>
+    <p class="muted" style="margin:8px 0 0">Kaynak hesabın tüm oyun ilerlemesi (seviye, para, altın, alanlar, işçiler, makineler…) hedef hesaba <b>kopyalanır</b>. Hedef hesabın kendi ilerlemesi <b>silinir</b>. <b>"Kullanıcı adını da taşı"</b> seçiliyse kaynağın adı hedefe geçer (hedefin eski adı serbest kalır, kaynak hesap adsız kalır ve oyunu açınca yeni ad seçer); seçili değilse herkes kendi adını korur. Hedef oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır ve oyun yeniden başlar.<br><b>En doğru sonuç için:</b> aktarırken <b>kaynak hesapla oyun açık</b> olsun — panel önce oradan o anki kaydı alır. Aktarımdan sonra kaynak hesapla oynamaya devam edilirse o ilerleme hedefe geçmez.</p>
     <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="x-go" class="danger">Aktar</button></div></div>
     <p id="x-msg"></p>
   </details>
@@ -241,6 +241,17 @@ function findPlayer(q) {
   return players.find((x) => x.id === q) || players.find((x) => (x.nameLower || '') === low || (x.name || '').toLocaleLowerCase('tr-TR') === low)
     || (low.length >= 6 ? players.find((x) => x.id.toLowerCase().startsWith(low)) : null) || null;
 }
+/** Kaynak oyuna "hemen yedekle" isteği gönderir; oyun açıksa yeni yedek birkaç saniyede gelir. */
+async function freshBackup(src) {
+  const before = ms(xferSave?.at);
+  try { await addDoc(collection(db, 'gifts'), { to: src.id, toName: pname(src), kind: 'backup', createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid }); }
+  catch { return false; }
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try { const snap = await getDoc(doc(db, 'saves', src.id)); if (snap.exists() && ms(snap.data().at) > before) { xferSave = snap.data(); return true; } } catch {}
+  }
+  return false;
+}
 async function xferInit(p) {
   xferSave = null; xferTarget = null;
   $('#x-name').checked = !!p.name; $('#x-name').disabled = !p.name;
@@ -293,7 +304,16 @@ $('#x-go').onclick = async () => {
   if (!xferSave) { $('#x-msg').innerHTML = '<span class="err">Kaynak hesabın bulut yedeği yok.</span>'; return; }
   if (!xferTarget) { $('#x-msg').innerHTML = '<span class="err">Önce geçerli bir hedef hesap seç.</span>'; return; }
   const t = xferTarget;
-  if (!confirm(`HESAP AKTARIMI\n\nKaynak: ${pname(src)} (Seviye ${xferSave.level ?? src.level}, ${big(src.money)} para)\nHedef: ${pname(t)} (Seviye ${t.level}, ${big(t.money)} para)\n\n${pname(t)} hesabının mevcut ilerlemesi SİLİNECEK ve yerine ${pname(src)} hesabının verileri gelecek.\nBu işlem geri alınamaz. Devam edilsin mi?`)) return;
+  // Önce kaynak oyundan EN GÜNCEL kaydı iste (oyun açıksa birkaç saniyede gelir); gelmezse son yedekle devam edilir
+  $('#x-go').disabled = true;
+  $('#x-msg').innerHTML = '<span class="muted">Kaynak oyundan güncel kayıt isteniyor… (en fazla 20 sn)</span>';
+  const fresh = await freshBackup(src);
+  $('#x-go').disabled = false;
+  const age = Math.max(0, Math.round((Date.now() - ms(xferSave.at)) / 60000));
+  const ageTxt = fresh ? 'Kayıt: ŞİMDİ alındı (kaynak oyun açık) ✔' : `UYARI: Kaynak oyun şu an kapalı. Son yedek ${age} dk önce alınmış; ondan sonra kaynakta yapılanlar aktarılmaz.\n(En güncel hâl için kaynak hesapla oyunu açıp tekrar Aktar'a bas.)`;
+  $('#x-msg').innerHTML = fresh ? '<span class="ok">Güncel kayıt alındı.</span>' : `<span class="err">Kaynak oyun kapalı; son yedek ${age} dk önce.</span>`;
+  $('#x-backup').innerHTML = `Bulut yedeği: <b>${ago(xferSave.at)}</b> · Seviye ${xferSave.level ?? '?'} · ${Math.max(1, Math.round((xferSave.size || 0) / 1024))} KB`;
+  if (!confirm(`HESAP AKTARIMI\n\n${ageTxt}\n\nKaynak: ${pname(src)} (Seviye ${xferSave.level ?? src.level}, ${big(src.money)} para)\nHedef: ${pname(t)} (Seviye ${t.level}, ${big(t.money)} para)\n\n${pname(t)} hesabının mevcut ilerlemesi SİLİNECEK ve yerine ${pname(src)} hesabının verileri gelecek.\nBu işlem geri alınamaz. Devam edilsin mi?`)) return;
   const moveName = $('#x-name').checked && !!src.name;
   $('#x-go').disabled = true;
   try {
@@ -376,7 +396,7 @@ async function loadGifts() {
   try {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
     const label = { level: 'seviye', speed: 'hız seviyesi', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
-    $('#gift-rows').innerHTML = snap.docs.map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
+    $('#gift-rows').innerHTML = snap.docs.filter((d) => d.data().kind !== 'backup').map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
       const what = g.kind === 'rename' ? `<span class="tag on">Ad</span> ${g.name ? 'yeni ad: ' + esc(g.name) : 'ad kaldırıldı (başka hesaba aktarıldı)'}` : g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
         : Object.entries(g.items || {}).map(([k, v]) => `${v > 0 ? '+' : ''}${big(v)} ${label[k] || k}`).join(', ');
       return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
