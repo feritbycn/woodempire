@@ -216,6 +216,7 @@ export class CloudSystem {
 
   giftLines(items) {
     const L = [];
+    if (items.level) L.push(`<div class="gl">⭐ <b>+${fmt(items.level)}</b> seviye</div>`);
     if (items.gold) L.push(`<div class="gl">🪙 <b>${fmt(items.gold)}</b> altın</div>`);
     if (items.money) L.push(`<div class="gl">💰 <b>${fmt(items.money)}</b> para</div>`);
     if (items.xp) L.push(`<div class="gl">⭐ <b>${fmt(items.xp)}</b> XP</div>`);
@@ -251,6 +252,8 @@ export class CloudSystem {
     if (n(items.gold)) g.economy.addGold(n(items.gold), 'gift');
     if (n(items.money)) g.economy.addMoney(n(items.money), 'gift');
     if (n(items.xp)) g.levels.addXP(n(items.xp));
+    if (n(items.level)) { const s = g.state; s.level = Math.max(1, s.level + Math.min(1000, n(items.level))); try { const need = g.levels.need; if (s.xp >= need) s.xp = need - 1; } catch {} g.bus.emit('xp', { amount: 0 }); }
+    if (n(items.logs) > 50000) items = { ...items, logs: 50000 };
     if (n(items.logs)) {
       const d = g.sites.get('depot1');
       if (d?.buffer) {

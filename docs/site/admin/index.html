@@ -30,6 +30,10 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button{background:var(--chip);color:var(--ink)}.tabs button.on{background:var(--green2);color:#fff}
 .hide{display:none!important}
   .amt-hint{font-size:12px;min-height:16px;margin-top:2px}
+  .addgrid{display:grid;grid-template-columns:auto auto 1fr;gap:4px 12px;align-items:start}
+  .addgrid .ah{font-size:12px;opacity:.7;font-weight:700}
+  .addgrid .an,.addgrid .ac{padding-top:9px;white-space:nowrap}
+  .addgrid .ac b{font-size:16px}
 </style>
 </head>
 <body>
@@ -77,7 +81,11 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
 <dialog id="dlg-player"><div class="dlg">
   <h2 id="dp-title" style="margin:0"></h2><div class="muted" id="dp-sub"></div>
   <div class="kv" id="dp-kv"></div>
-  <div id="dp-set-wrap">
+  <h3 id="dp-add-title">Ekle (mevcut değerin üstüne)</h3>
+  <div id="dp-form"></div>
+  <div class="row" style="margin-top:12px"><button class="ghost" id="dp-close">Kapat</button><button id="dp-send">Ekle ve gönder</button></div>
+  <p id="dp-msg"></p>
+  <details id="dp-set-wrap" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">Değeri doğrudan değiştir (ekleme değil, gelişmiş)</summary>
     <h3>Değerleri düzenle</h3>
     <p class="muted" style="margin-top:-6px">Girdiğin değer oyuncunun hesabındaki değerin <b>yerine geçer</b>. Boş bırakılan alan değişmez. Oyun açıksa hemen, kapalıysa açınca uygulanır.</p>
     <div class="row"><div><label>Seviye</label><input type="number" min="1" id="s-level"></div><div><label>XP (seviye içi)</label><input type="number" min="0" id="s-xp"></div></div>
@@ -86,11 +94,8 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <div style="margin-top:8px"><label>Not (isteğe bağlı, oyuncuya gösterilir)</label><input id="s-msg" maxlength="140" placeholder="ör. Destek talebin çözüldü"></div>
     <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="dp-set">Değerleri kaydet</button></div></div>
     <p id="dp-set-msg"></p>
-  </div>
-  <h3>Hediye gönder (üstüne ekler)</h3>
-  <div id="dp-form"></div>
-  <div class="row" style="margin-top:12px"><button class="ghost" id="dp-close">Kapat</button><button id="dp-send">Gönder</button></div>
-  <p id="dp-msg"></p>
+  </details>
+
 </div></dialog>
 
 <script type="module">
@@ -177,9 +182,11 @@ $('#reload').onclick = loadAll;
 document.querySelectorAll('th[data-s]').forEach((th) => th.onclick = () => { const k = th.dataset.s; sortDir = sortKey === k ? -sortDir : -1; sortKey = k; renderPlayers(); });
 $('#rows').onclick = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr) openPlayer(players.find((p) => p.id === tr.dataset.id)); };
 
-const giftForm = () => `<div class="row"><div><label>Altın</label>${amtInput('g-gold', '')}</div><div><label>Para</label>${amtInput('g-money', '')}</div></div>
-  <div class="row" style="margin-top:8px"><div><label>XP</label>${amtInput('g-xp', '')}</div><div><label>Kütük (Kütük Deposu'na)</label>${amtInput('g-logs', '')}</div></div>
-  <p class="muted" style="margin:6px 0 0">Girdiğin miktar oyuncunun mevcut değerinin <b>üstüne eklenir</b>. Kısaltma yazabilirsin: <b>400B</b>, <b>1,5T</b>, <b>400A</b>, <b>359AB</b>.</p>
+const ADD_FIELDS = [['level', '⭐ Seviye'], ['gold', '🪙 Altın'], ['money', '💰 Para'], ['xp', '✨ XP'], ['logs', '🪵 Kütük']];
+const giftForm = (p) => `<div class="addgrid"><div class="ah">Alan</div><div class="ah">Şu an</div><div class="ah">Ekle</div>
+  ${ADD_FIELDS.map(([k, name]) => `<div class="an">${name}</div><div class="ac">${p ? `<b>${k === 'level' ? (p.level ?? '?') : big(p[k])}</b>` : '<span class="muted">—</span>'}</div>
+    <div><input type="text" autocomplete="off" id="g-${k}" data-amt data-cur="${p && p[k] != null ? p[k] : ''}" data-k="${k}" placeholder="${k === 'level' ? '+ ör. 2' : '+ ör. 400B'}"></div>`).join('')}</div>
+  <p class="muted" style="margin:6px 0 0">Yazdığın miktar <b>mevcut değerin üstüne eklenir</b>; her kutunun altında eklendikten sonraki değer görünür. Kısaltma: <b>400B</b>, <b>1,5T</b>, <b>400A</b>, <b>359AB</b> (K=bin, M=milyon, B=milyar, T, Q, AA, AB… her biri ×1000). Değerler oyuncunun son eşitlemesine göredir (en fazla ~5 dk eski olabilir).</p>
   <div style="margin-top:8px"><label>Mesaj (isteğe bağlı, oyuncuya gösterilir)</label><input id="g-msg" maxlength="140" placeholder="ör. Turnuva ödülün!"></div>
   <div style="margin-top:8px"><label>Geçerlilik</label><select id="g-exp"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7" selected>7 gün</option><option value="30">30 gün</option></select></div>`;
 
@@ -191,7 +198,7 @@ function openPlayer(p) {
     ['İşçi', p.workers], ['Hayvan', p.animals], ['Depodaki kütük', big(p.logs)], ['Kesilen ağaç', big(p.trees)], ['Gönderilen kamyon', big(p.trucks)], ['Oynama süresi', hrs(p.playTime)],
     ['Premium / Reklamsız', p.premium || p.noAds ? 'Evet' : 'Hayır'], ['Platform', p.platform], ['Son görülme', dt(p.lastSeen)], ['Katılma', dt(p.createdAt)]]
     .map(([k, v]) => `<span>${k}</span><b>${esc(v ?? '—')}</b>`).join('') : '';
-  $('#dp-form').innerHTML = giftForm(); $('#dp-msg').textContent = ''; $('#dp-set-msg').textContent = '';
+  $('#dp-form').innerHTML = giftForm(p); $('#dp-add-title').textContent = p ? 'Ekle (mevcut değerin üstüne)' : 'Herkese hediye (her oyuncunun kendi değerinin üstüne)'; $('#dp-msg').textContent = ''; $('#dp-set-msg').textContent = '';
   $('#dp-set-wrap').classList.toggle('hide', !p);
   if (p) { for (const k of ['level', 'xp', 'gold', 'money']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : big(p[k])); } $('#s-msg').value = ''; }
   amtPreview();
@@ -201,15 +208,21 @@ function openPlayer(p) {
 function amtPreview() {
   for (const el of document.querySelectorAll('[data-amt], #s-level, #s-xp')) {
     let hint = el.nextElementSibling; if (!hint || !hint.classList.contains('amt-hint')) { hint = document.createElement('div'); hint.className = 'amt-hint muted'; el.after(hint); }
-    const show = () => { const v = parseAmt(el.value); hint.innerHTML = v === null ? '' : Number.isNaN(v) ? '<span class="err">anlaşılamadı</span>' : `= ${nf.format(v)}${v >= 1e4 ? ' (' + big(v) + ')' : ''}`; };
+    const show = () => { const v = parseAmt(el.value); const cur = el.dataset.cur === undefined || el.dataset.cur === '' ? null : Number(el.dataset.cur);
+      hint.innerHTML = v === null ? '' : Number.isNaN(v) ? '<span class="err">anlaşılamadı</span>'
+        : el.dataset.k ? `+${nf.format(v)}${cur !== null ? ` → yeni: <b>${el.dataset.k === 'level' ? cur + v : big(cur + v)}</b>` : ''}`
+        : `= ${nf.format(v)}${v >= 1e4 ? ' (' + big(v) + ')' : ''}`; };
     el.oninput = show; show();
   }
 }
 $('#gift-all').onclick = () => openPlayer(null);
 $('#dp-close').onclick = () => $('#dlg-player').close();
 $('#dp-send').onclick = async () => {
-  const items = {}; for (const k of ['gold', 'money', 'xp', 'logs']) { const v = parseAmt($('#g-' + k).value); if (Number.isNaN(v)) { $('#dp-msg').innerHTML = '<span class="err">Miktarı anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v) items[k] = v; }
-  if (!confirm((current ? pname(current) : 'TÜM oyuncular') + ' için eklenecek:\n' + Object.entries(items).map(([k, v]) => `${({ gold: 'Altın', money: 'Para', xp: 'XP', logs: 'Kütük' })[k]}: +${big(v)}`).join('\n') + '\n\nGönderilsin mi?')) return;
+  const items = {}; for (const k of ['level', 'gold', 'money', 'xp', 'logs']) { const v = parseAmt($('#g-' + k).value); if (Number.isNaN(v)) { $('#dp-msg').innerHTML = '<span class="err">Miktarı anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v) items[k] = v; }
+  if (items.logs > 50000) { $('#dp-msg').innerHTML = '<span class="err">Kütük en fazla 50.000 eklenebilir (depoya tek tek konuyor).</span>'; return; }
+  if (items.level > 1000) { $('#dp-msg').innerHTML = '<span class="err">Seviye bir seferde en fazla +1000 eklenebilir.</span>'; return; }
+  if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
+  if (!confirm((current ? pname(current) : 'TÜM oyuncular') + ' için eklenecek:\n' + Object.entries(items).map(([k, v]) => `${({ level: 'Seviye', gold: 'Altın', money: 'Para', xp: 'XP', logs: 'Kütük' })[k]}: ` + (current && current[k] != null ? `${k === 'level' ? current[k] : big(current[k])} + ${k === 'level' ? v : big(v)} = ${k === 'level' ? current[k] + v : big(current[k] + v)}` : `+${big(v)}`)).join('\n') + '\n\nGönderilsin mi?')) return;
   if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
   const to = current ? current.id : 'all';
   if (to === 'all' && !confirm('Bu hediye TÜM oyunculara gidecek. Emin misin?')) return;
@@ -246,7 +259,7 @@ $('#dp-set').onclick = async () => {
 async function loadGifts() {
   try {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
-    const label = { gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
+    const label = { level: 'seviye', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
     $('#gift-rows').innerHTML = snap.docs.map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
       const what = g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' })[k] || k} = ${big(v)}`).join(', ')
         : Object.entries(g.items || {}).map(([k, v]) => `${big(v)} ${label[k] || k}`).join(', ');
