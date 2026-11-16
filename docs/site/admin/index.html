@@ -29,6 +29,7 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
 .center{max-width:460px;margin:60px auto;text-align:center}code{background:var(--chip);padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all}
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button{background:var(--chip);color:var(--ink)}.tabs button.on{background:var(--green2);color:#fff}
 .hide{display:none!important}
+  .amt-hint{font-size:12px;min-height:16px;margin-top:2px}
 </style>
 </head>
 <body>
@@ -80,7 +81,8 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <h3>Değerleri düzenle</h3>
     <p class="muted" style="margin-top:-6px">Girdiğin değer oyuncunun hesabındaki değerin <b>yerine geçer</b>. Boş bırakılan alan değişmez. Oyun açıksa hemen, kapalıysa açınca uygulanır.</p>
     <div class="row"><div><label>Seviye</label><input type="number" min="1" id="s-level"></div><div><label>XP (seviye içi)</label><input type="number" min="0" id="s-xp"></div></div>
-    <div class="row" style="margin-top:8px"><div><label>Altın</label><input type="number" min="0" id="s-gold"></div><div><label>Para</label><input type="number" min="0" id="s-money"></div></div>
+    <div class="row" style="margin-top:8px"><div><label>Altın</label><input type="text" autocomplete="off" id="s-gold" data-amt></div><div><label>Para</label><input type="text" autocomplete="off" id="s-money" data-amt></div></div>
+    <p class="muted" style="margin:6px 0 0">Kısaltma yazabilirsin: <b>400B</b>, <b>1,5T</b>, <b>359AB</b>, <b>400A</b> (=400AA). Birimler: K=bin, M=milyon, B=milyar, T, Q, AA, AB … (her biri ×1000)</p>
     <div style="margin-top:8px"><label>Not (isteğe bağlı, oyuncuya gösterilir)</label><input id="s-msg" maxlength="140" placeholder="ör. Destek talebin çözüldü"></div>
     <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="dp-set">Değerleri kaydet</button></div></div>
     <p id="dp-set-msg"></p>
@@ -104,7 +106,16 @@ const auth = getAuth(app), db = getFirestore(app);
 const $ = (s) => document.querySelector(s);
 const show = (id) => ['#v-login', '#v-noadmin', '#v-panel'].forEach((v) => $(v).classList.toggle('hide', v !== id));
 const nf = new Intl.NumberFormat('tr-TR');
-const big = (n) => { n = Number(n) || 0; const u = ['', 'B', 'M', 'Mr', 'T', 'Kt']; let i = 0; while (Math.abs(n) >= 1000 && i < u.length - 1) { n /= 1000; i++; } return i ? n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0).replace('.', ',') + ' ' + u[i] : nf.format(Math.round(n)); };
+// Oyunla aynı birimler: K, M, B, T, Q, AA, AB … ZZ (her biri ×1000)
+const UNITS = ['', 'K', 'M', 'B', 'T', 'Q']; for (let a = 0; a < 26; a++) for (let b = 0; b < 26; b++) UNITS.push(String.fromCharCode(65 + a) + String.fromCharCode(65 + b));
+const big = (n) => { n = Number(n) || 0; if (Math.abs(n) < 1e4) return nf.format(Math.round(n)); let i = 0; while (Math.abs(n) >= 1000 && i < UNITS.length - 1) { n /= 1000; i++; } return n.toFixed(Math.abs(n) >= 100 ? 0 : 1).replace('.0', '').replace('.', ',') + UNITS[i]; };
+/** "400B", "1,5T", "359AB", "400A" (= AA), "12000" → sayı. Boş → null, geçersiz → NaN. */
+const parseAmt = (t) => { t = String(t ?? '').trim().toUpperCase().replace(/\s+/g, ''); if (!t) return null;
+  const m = t.match(/^(\d+(?:[.,]\d+)?)([A-Z]{0,2})$/); if (!m) return NaN;
+  let u = m[2]; if (u.length === 1 && !UNITS.includes(u)) u = u + u;
+  const k = UNITS.indexOf(u); if (k < 0) return NaN;
+  const v = Math.floor(Number(m[1].replace(',', '.')) * Math.pow(1000, k)); return isFinite(v) && v >= 0 ? v : NaN; };
+const amtInput = (id, val) => `<input type="text" inputmode="text" autocomplete="off" id="${id}" value="${val}" placeholder="ör. 400B" data-amt>`;
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ms = (t) => (t?.toMillis ? t.toMillis() : 0);
 const ago = (t) => { const m = ms(t); if (!m) return '—'; const s = (Date.now() - m) / 1000; if (s < 90) return 'şimdi'; if (s < 3600) return Math.round(s / 60) + ' dk önce'; if (s < 86400) return Math.round(s / 3600) + ' sa önce'; return Math.round(s / 86400) + ' gün önce'; };
@@ -166,8 +177,9 @@ $('#reload').onclick = loadAll;
 document.querySelectorAll('th[data-s]').forEach((th) => th.onclick = () => { const k = th.dataset.s; sortDir = sortKey === k ? -sortDir : -1; sortKey = k; renderPlayers(); });
 $('#rows').onclick = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr) openPlayer(players.find((p) => p.id === tr.dataset.id)); };
 
-const giftForm = () => `<div class="row"><div><label>Altın</label><input type="number" min="0" id="g-gold" value="0"></div><div><label>Para</label><input type="number" min="0" id="g-money" value="0"></div></div>
-  <div class="row" style="margin-top:8px"><div><label>XP</label><input type="number" min="0" id="g-xp" value="0"></div><div><label>Kütük (Kütük Deposu'na)</label><input type="number" min="0" id="g-logs" value="0"></div></div>
+const giftForm = () => `<div class="row"><div><label>Altın</label>${amtInput('g-gold', '')}</div><div><label>Para</label>${amtInput('g-money', '')}</div></div>
+  <div class="row" style="margin-top:8px"><div><label>XP</label>${amtInput('g-xp', '')}</div><div><label>Kütük (Kütük Deposu'na)</label>${amtInput('g-logs', '')}</div></div>
+  <p class="muted" style="margin:6px 0 0">Girdiğin miktar oyuncunun mevcut değerinin <b>üstüne eklenir</b>. Kısaltma yazabilirsin: <b>400B</b>, <b>1,5T</b>, <b>400A</b>, <b>359AB</b>.</p>
   <div style="margin-top:8px"><label>Mesaj (isteğe bağlı, oyuncuya gösterilir)</label><input id="g-msg" maxlength="140" placeholder="ör. Turnuva ödülün!"></div>
   <div style="margin-top:8px"><label>Geçerlilik</label><select id="g-exp"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7" selected>7 gün</option><option value="30">30 gün</option></select></div>`;
 
@@ -181,15 +193,23 @@ function openPlayer(p) {
     .map(([k, v]) => `<span>${k}</span><b>${esc(v ?? '—')}</b>`).join('') : '';
   $('#dp-form').innerHTML = giftForm(); $('#dp-msg').textContent = ''; $('#dp-set-msg').textContent = '';
   $('#dp-set-wrap').classList.toggle('hide', !p);
-  if (p) { $('#s-level').value = p.level ?? ''; $('#s-xp').value = ''; $('#s-gold').value = p.gold ?? ''; $('#s-money').value = p.money ?? ''; $('#s-msg').value = '';
-    $('#s-level').placeholder = p.level ?? ''; $('#s-gold').placeholder = p.gold ?? ''; $('#s-money').placeholder = p.money ?? ''; $('#s-xp').placeholder = p.xp ?? ''; }
+  if (p) { for (const k of ['level', 'xp', 'gold', 'money']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : big(p[k])); } $('#s-msg').value = ''; }
+  amtPreview();
   $('#dlg-player').showModal();
+}
+/** Kısaltmalı kutuların altında girilen değerin açılımı gösterilir (400B = 400.000.000.000). */
+function amtPreview() {
+  for (const el of document.querySelectorAll('[data-amt], #s-level, #s-xp')) {
+    let hint = el.nextElementSibling; if (!hint || !hint.classList.contains('amt-hint')) { hint = document.createElement('div'); hint.className = 'amt-hint muted'; el.after(hint); }
+    const show = () => { const v = parseAmt(el.value); hint.innerHTML = v === null ? '' : Number.isNaN(v) ? '<span class="err">anlaşılamadı</span>' : `= ${nf.format(v)}${v >= 1e4 ? ' (' + big(v) + ')' : ''}`; };
+    el.oninput = show; show();
+  }
 }
 $('#gift-all').onclick = () => openPlayer(null);
 $('#dp-close').onclick = () => $('#dlg-player').close();
 $('#dp-send').onclick = async () => {
-  const n = (id) => Math.max(0, Math.floor(Number($(id).value) || 0));
-  const items = {}; for (const k of ['gold', 'money', 'xp', 'logs']) { const v = n('#g-' + k); if (v) items[k] = v; }
+  const items = {}; for (const k of ['gold', 'money', 'xp', 'logs']) { const v = parseAmt($('#g-' + k).value); if (Number.isNaN(v)) { $('#dp-msg').innerHTML = '<span class="err">Miktarı anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v) items[k] = v; }
+  if (!confirm((current ? pname(current) : 'TÜM oyuncular') + ' için eklenecek:\n' + Object.entries(items).map(([k, v]) => `${({ gold: 'Altın', money: 'Para', xp: 'XP', logs: 'Kütük' })[k]}: +${big(v)}`).join('\n') + '\n\nGönderilsin mi?')) return;
   if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
   const to = current ? current.id : 'all';
   if (to === 'all' && !confirm('Bu hediye TÜM oyunculara gidecek. Emin misin?')) return;
@@ -206,10 +226,10 @@ $('#dp-send').onclick = async () => {
 
 $('#dp-set').onclick = async () => {
   if (!current) return;
-  const val = (id) => { const t = $(id).value.trim(); if (t === '') return null; const n = Math.floor(Number(t)); return isFinite(n) && n >= 0 ? n : NaN; };
+  const val = (id) => parseAmt($(id).value);
   const now = { level: current.level, xp: current.xp, gold: current.gold, money: current.money };
   const set = {};
-  for (const k of ['level', 'xp', 'gold', 'money']) { const v = val('#s-' + k); if (Number.isNaN(v)) { $('#dp-set-msg').innerHTML = '<span class="err">Sadece 0 veya daha büyük tam sayı gir.</span>'; return; } if (v !== null && v !== now[k]) set[k] = v; }
+  for (const k of ['level', 'xp', 'gold', 'money']) { const v = val('#s-' + k); if (Number.isNaN(v)) { $('#dp-set-msg').innerHTML = '<span class="err">Değeri anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v !== null && v !== now[k]) set[k] = v; }
   if (set.level === 0) set.level = 1;
   if (!Object.keys(set).length) { $('#dp-set-msg').innerHTML = '<span class="err">Değiştirilen bir değer yok.</span>'; return; }
   const label = { level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' };

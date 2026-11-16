@@ -79,11 +79,16 @@ export const ACHIEVEMENTS = [
   { id: 'workers', name: 'İşveren', stat: 'workersHired', base: 3, mult: 2, gold: 20, desc: (n) => `${n} işçi çalıştır` },
 ];
 
+// Büyük sayı birimleri: K, M, B, T, Q, sonra AA, AB … AZ, BA … ZZ (her biri ×1000). Yönetim paneliyle aynı.
+export const UNITS = ['', 'K', 'M', 'B', 'T', 'Q'];
+for (let a = 0; a < 26; a++) for (let b = 0; b < 26; b++) UNITS.push(String.fromCharCode(65 + a) + String.fromCharCode(65 + b));
+
 export function fmt(n) {
-  if (n >= 1e9) return (n / 1e9).toFixed(n >= 1e10 ? 0 : 1).replace('.0', '') + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.0', '') + 'M';
-  if (n >= 1e4) return (n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace('.0', '') + 'K';
-  return Math.round(n).toLocaleString('tr-TR');
+  n = Number(n) || 0;
+  if (Math.abs(n) < 1e4) return Math.round(n).toLocaleString('tr-TR');
+  let i = 0;
+  while (Math.abs(n) >= 1000 && i < UNITS.length - 1) { n /= 1000; i++; }
+  return n.toFixed(Math.abs(n) >= 100 ? 0 : 1).replace('.0', '') + UNITS[i];
 }
 
 export class MissionSystem {
