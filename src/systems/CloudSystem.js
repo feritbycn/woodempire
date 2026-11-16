@@ -102,7 +102,8 @@ export class CloudSystem {
         const snap = await F.getDoc(ref);
         if (!snap.exists()) { data.createdAt = F.serverTimestamp(); data.name = null; data.nameLower = null; }
         else { // buluttaki ad yerelde yoksa (yeniden kurulum değil, kayıt temizliği) geri al
-          const d = snap.data(); if (d.name && !this.game.state.cloud.name) this.game.state.cloud.name = d.name;
+          // buluttaki ad esastır: yönetici adı değiştirmiş ya da başka hesaba aktarmış olabilir
+          const d = snap.data(); if ('nameLower' in d && (d.name || null) !== (this.game.state.cloud.name || null)) { this.game.state.cloud.name = d.name || null; this.game.save.requestSave(); }
         }
       }
       await F.setDoc(ref, data, { merge: true });
@@ -147,7 +148,8 @@ export class CloudSystem {
     catch (e) { console.warn('[Bulut] aktarım okunamadı', e); return; }
     try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }
     catch (e) { console.warn('[Bulut] aktarım kaydı', e?.code || e); return; }
-    st.cloud = { ...(st.cloud || {}), uid: this.uid, name: g.state.cloud?.name || null };
+    // ad da aktarıldıysa (x.name) kaynağın adı gelir; aksi halde bu hesabın adı korunur
+    st.cloud = { ...(st.cloud || {}), uid: this.uid, name: x.name !== undefined ? (x.name || null) : (g.state.cloud?.name || null) };
     st.lastSeen = Date.now();
     this.status = 'restoring'; // yeniden başlatılana dek eski durum buluta yazılmasın
     await g.save.replaceWith(st);
@@ -233,6 +235,7 @@ export class CloudSystem {
       for (const d of list) {
         this.shownGift.add(d.id);
         const x = d.data();
+        if (x.kind === 'rename') { if (x.to === this.uid) this.applyRename(d.id, x); continue; }
         if (x.kind === 'restore') { if (x.to === this.uid && x.save) this.applyRestore(d.id, x); continue; }
         if (x.kind === 'set') this.applySet(d.id, x); else this.showGift(d.id, x); // yönetici düzenlemesi pencere açmadan uygulanır
       }
@@ -243,6 +246,18 @@ export class CloudSystem {
 
   /** YÖNETİCİ DÜZENLEMESİ: panelden seviye / altın / para / XP doğrudan ayarlanır (ekleme değil, yeni değer).
    *  Önce "alındı" kaydı yazılır → aynı düzenleme ikinci kez uygulanmaz. */
+  /** Yönetici kullanıcı adını değiştirdi (veya hesap aktarımında ad başka hesaba geçti → ad boşalır, yenisi sorulur). */
+  async applyRename(id, x) {
+    const F = this.F; const g = this.game;
+    try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }
+    catch (e) { console.warn('[Bulut] ad kaydı', e?.code || e); return; }
+    const c = g.state.cloud || (g.state.cloud = {});
+    c.name = x.name || null;
+    g.save.requestSave(true);
+    g.bus.emit('toast', { text: c.name ? `Kullanıcı adın değiştirildi: ${c.name}` : 'Kullanıcı adın kaldırıldı, yeni bir ad seç', type: c.name ? 'success' : 'warn' });
+    if (!c.name) setTimeout(() => this.maybeAskName(), 1500);
+  }
+
   async applySet(id, data) {
     const F = this.F; const g = this.game; const s = g.state; const v = data.set || {};
     try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }

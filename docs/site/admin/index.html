@@ -96,13 +96,19 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="dp-set">Değerleri kaydet</button></div></div>
     <p id="dp-set-msg"></p>
   </details>
+  <details id="dp-rename" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">✏️ Kullanıcı adını değiştir</summary>
+    <p class="muted" style="margin-top:8px">Şu anki ad: <b id="r-cur"></b>. Yeni ad 3–16 karakter; harf, rakam ve _ olabilir. Başka oyuncunun adı verilemez. Eski ad serbest kalır.</p>
+    <div class="row"><div><input id="r-name" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="yeni kullanıcı adı"></div><div style="flex:0 0 auto"><button id="r-go">Adı değiştir</button></div></div>
+    <p id="r-msg"></p>
+  </details>
   <details id="dp-xfer" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">🔄 Hesap aktarımı (bu hesabın verilerini başka hesaba taşı)</summary>
     <p class="muted" id="x-backup" style="margin-top:8px"></p>
     <label>Hedef hesap (kullanıcı adı veya kimlik)</label>
     <input id="x-to" autocomplete="off" list="x-list" placeholder="ör. Ali_123 veya Oyuncu #AB12CD veya tam kimlik"><datalist id="x-list"></datalist>
     <div id="x-target" style="margin-top:8px"></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-weight:600"><input type="checkbox" id="x-name" checked style="width:auto;margin-top:3px"><span id="x-name-lbl">Kullanıcı adını da taşı</span></label>
     <div style="margin-top:8px"><label>Not (isteğe bağlı, hedef oyuncuya gösterilir)</label><input id="x-msg-in" maxlength="140" placeholder="ör. Eski telefonundaki hesabın taşındı"></div>
-    <p class="muted" style="margin:8px 0 0">Kaynak hesabın tüm oyun ilerlemesi (seviye, para, altın, alanlar, işçiler, makineler…) hedef hesaba <b>kopyalanır</b>. Hedef hesabın kendi ilerlemesi <b>silinir</b>, kullanıcı adı ve kimliği aynı kalır. Kaynak hesap olduğu gibi kalır. Hedef oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır ve oyun yeniden başlar.</p>
+    <p class="muted" style="margin:8px 0 0">Kaynak hesabın tüm oyun ilerlemesi (seviye, para, altın, alanlar, işçiler, makineler…) hedef hesaba <b>kopyalanır</b>. Hedef hesabın kendi ilerlemesi <b>silinir</b>. <b>"Kullanıcı adını da taşı"</b> seçiliyse kaynağın adı hedefe geçer (hedefin eski adı serbest kalır, kaynak hesap adsız kalır ve oyunu açınca yeni ad seçer); seçili değilse herkes kendi adını korur. Hedef oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır ve oyun yeniden başlar.</p>
     <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="x-go" class="danger">Aktar</button></div></div>
     <p id="x-msg"></p>
   </details>
@@ -112,7 +118,7 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, getDocs, query, orderBy, limit, where, addDoc, deleteDoc, serverTimestamp, Timestamp, getCountFromServer } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, getDocs, query, orderBy, limit, where, addDoc, deleteDoc, serverTimestamp, writeBatch, Timestamp, getCountFromServer } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyCvPap7oTyQtS4WkSU4Ugd5l5gA_4smQEE', authDomain: 'woodempire-37573.firebaseapp.com', projectId: 'woodempire-37573',
@@ -222,6 +228,8 @@ function openPlayer(p) {
   amtPreview();
   $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false;
   if (p) xferInit(p);
+  $('#dp-rename').classList.toggle('hide', !p); $('#dp-rename').open = false;
+  if (p) { $('#r-cur').textContent = p.name || '(yok)'; $('#r-name').value = ''; $('#r-msg').textContent = ''; }
   $('#dlg-player').showModal();
 }
 
@@ -235,6 +243,8 @@ function findPlayer(q) {
 }
 async function xferInit(p) {
   xferSave = null; xferTarget = null;
+  $('#x-name').checked = !!p.name; $('#x-name').disabled = !p.name;
+  $('#x-name-lbl').innerHTML = p.name ? `Kullanıcı adını da taşı: <b>${esc(p.name)}</b> adı hedef hesaba geçer` : 'Kullanıcı adını da taşı (kaynak hesabın adı yok)';
   $('#x-to').value = ''; $('#x-target').innerHTML = ''; $('#x-msg').textContent = ''; $('#x-msg-in').value = '';
   $('#x-list').innerHTML = players.filter((x) => x.id !== p.id).slice(0, 300).map((x) => `<option value="${esc(x.name || x.id)}">${esc(pname(x))} · Sv.${x.level ?? '?'}</option>`).join('');
   $('#x-backup').textContent = 'Bulut yedeği kontrol ediliyor…';
@@ -246,6 +256,30 @@ async function xferInit(p) {
     $('#x-backup').innerHTML = `Bulut yedeği: <b>${ago(xferSave.at)}</b> · Seviye ${xferSave.level ?? '?'} · ${Math.max(1, Math.round((xferSave.size || 0) / 1024))} KB`;
   } catch (e) { $('#x-backup').innerHTML = `<span class="err">Yedek okunamadı: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
 }
+// ---------- KULLANICI ADI DEĞİŞTİRME ----------
+const NAME_RE = /^[A-Za-z0-9_çğıöşüÇĞİÖŞÜ]{3,16}$/;
+$('#r-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const nn = $('#r-name').value.trim(), low = nn.toLocaleLowerCase('tr-TR');
+  if (!NAME_RE.test(nn)) { $('#r-msg').innerHTML = '<span class="err">3–16 karakter; yalnızca harf, rakam ve _ kullan.</span>'; return; }
+  if (nn === p.name) { $('#r-msg').innerHTML = '<span class="err">Ad zaten bu.</span>'; return; }
+  $('#r-go').disabled = true;
+  try {
+    const ex = await getDoc(doc(db, 'usernames', low));
+    if (ex.exists() && ex.data().uid !== p.id) { const o = players.find((x) => x.id === ex.data().uid); $('#r-msg').innerHTML = `<span class="err">Bu ad başka bir oyuncuda: ${esc(o ? pname(o) : ex.data().uid)}</span>`; $('#r-go').disabled = false; return; }
+    if (!confirm(`${pname(p)} → ${nn}\nKullanıcı adı değiştirilsin mi?`)) { $('#r-go').disabled = false; return; }
+    const b = writeBatch(db);
+    if (p.nameLower && p.nameLower !== low) b.delete(doc(db, 'usernames', p.nameLower));
+    b.set(doc(db, 'usernames', low), { uid: p.id, name: nn, at: serverTimestamp() });
+    b.update(doc(db, 'players', p.id), { name: nn, nameLower: low });
+    await b.commit();
+    await addDoc(collection(db, 'gifts'), { to: p.id, toName: nn, kind: 'rename', name: nn, createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid });
+    p.name = nn; p.nameLower = low; $('#dp-title').textContent = nn; $('#r-cur').textContent = nn; renderPlayers();
+    $('#r-msg').innerHTML = '<span class="ok">Ad değiştirildi. Oyun açıksa hemen, kapalıysa açınca görünür.</span>';
+  } catch (e) { $('#r-msg').innerHTML = `<span class="err">Değiştirilemedi: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
+  $('#r-go').disabled = false;
+};
+
 $('#x-to').oninput = () => {
   const t = findPlayer($('#x-to').value);
   xferTarget = t && current && t.id !== current.id ? t : null;
@@ -260,11 +294,26 @@ $('#x-go').onclick = async () => {
   if (!xferTarget) { $('#x-msg').innerHTML = '<span class="err">Önce geçerli bir hedef hesap seç.</span>'; return; }
   const t = xferTarget;
   if (!confirm(`HESAP AKTARIMI\n\nKaynak: ${pname(src)} (Seviye ${xferSave.level ?? src.level}, ${big(src.money)} para)\nHedef: ${pname(t)} (Seviye ${t.level}, ${big(t.money)} para)\n\n${pname(t)} hesabının mevcut ilerlemesi SİLİNECEK ve yerine ${pname(src)} hesabının verileri gelecek.\nBu işlem geri alınamaz. Devam edilsin mi?`)) return;
+  const moveName = $('#x-name').checked && !!src.name;
   $('#x-go').disabled = true;
   try {
-    await addDoc(collection(db, 'gifts'), { to: t.id, toName: pname(t), kind: 'restore', save: xferSave.data, enc: xferSave.enc || 'json', level: xferSave.level ?? null,
-      fromUid: src.id, fromName: pname(src), msg: $('#x-msg-in').value.trim().slice(0, 140), createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid });
-    $('#x-msg').innerHTML = `<span class="ok">Aktarım gönderildi! ${esc(pname(t))} oyunu açıksa birkaç saniye içinde, kapalıysa açınca uygulanır.</span>`;
+    const by = auth.currentUser.email || auth.currentUser.uid;
+    const srcName = src.name, srcLow = src.nameLower || (src.name || '').toLocaleLowerCase('tr-TR'), oldT = pname(t);
+    if (moveName) { // ad, hedefe geçer: hedefin eski adı serbest, kaynak adsız
+      const b = writeBatch(db);
+      if (t.nameLower && t.nameLower !== srcLow) b.delete(doc(db, 'usernames', t.nameLower));
+      b.set(doc(db, 'usernames', srcLow), { uid: t.id, name: srcName, at: serverTimestamp() });
+      b.update(doc(db, 'players', src.id), { name: null, nameLower: null });
+      b.update(doc(db, 'players', t.id), { name: srcName, nameLower: srcLow });
+      await b.commit();
+    }
+    await addDoc(collection(db, 'gifts'), { to: t.id, toName: oldT, kind: 'restore', save: xferSave.data, enc: xferSave.enc || 'json', level: xferSave.level ?? null,
+      ...(moveName ? { name: srcName } : {}), fromUid: src.id, fromName: pname(src), msg: $('#x-msg-in').value.trim().slice(0, 140), createdAt: serverTimestamp(), by });
+    if (moveName) {
+      await addDoc(collection(db, 'gifts'), { to: src.id, toName: srcName, kind: 'rename', name: null, msg: 'Kullanıcı adın başka hesaba aktarıldı', createdAt: serverTimestamp(), by });
+      t.name = srcName; t.nameLower = srcLow; src.name = null; src.nameLower = null; renderPlayers();
+    }
+    $('#x-msg').innerHTML = `<span class="ok">Aktarım gönderildi!${moveName ? ` <b>${esc(srcName)}</b> adı artık ${esc(oldT)} hesabında.` : ''} Hedef oyun açıksa birkaç saniye içinde, kapalıysa açınca uygulanır.</span>`;
     loadGifts();
   } catch (e) { $('#x-msg').innerHTML = `<span class="err">Gönderilemedi: ${esc(e.code || e.message)}</span>`; }
   $('#x-go').disabled = false;
@@ -328,7 +377,7 @@ async function loadGifts() {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
     const label = { level: 'seviye', speed: 'hız seviyesi', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
     $('#gift-rows').innerHTML = snap.docs.map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
-      const what = g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
+      const what = g.kind === 'rename' ? `<span class="tag on">Ad</span> ${g.name ? 'yeni ad: ' + esc(g.name) : 'ad kaldırıldı (başka hesaba aktarıldı)'}` : g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
         : Object.entries(g.items || {}).map(([k, v]) => `${v > 0 ? '+' : ''}${big(v)} ${label[k] || k}`).join(', ');
       return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
       <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';

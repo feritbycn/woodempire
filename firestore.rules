@@ -25,6 +25,8 @@ service cloud.firestore {
     match /players/{uid} {
       allow read: if isMe(uid) || isAdmin();
       allow delete: if isMe(uid) || isAdmin();
+      // Yönetici yalnızca adı değiştirebilir (ad değiştirme / hesap aktarımı); usernames kaydıyla birlikte yazılır.
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'nameLower']);
       // Oyuncu kendi özetini yazar. Ad (name/nameLower) değişiyorsa: daha önce adı olmamalı ve
       // aynı anda usernames/{nameLower} kaydı bu oyuncu adına oluşturulmuş olmalı (getAfter = toplu yazmanın sonucu).
       allow create, update: if isMe(uid)
@@ -65,7 +67,8 @@ service cloud.firestore {
         && validName(request.resource.data.name)
         && name.size() >= 3 && name.size() <= 16
         && getAfter(/databases/$(db)/documents/players/$(request.auth.uid)).data.nameLower == name;
-      allow update: if false;
+      // Yönetici adı başka oyuncuya verebilir (ad değiştirme / hesap aktarımı)
+      allow create, update: if isAdmin() && request.resource.data.keys().hasOnly(['uid', 'name', 'at']) && validName(request.resource.data.name);
       allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
     }
 
