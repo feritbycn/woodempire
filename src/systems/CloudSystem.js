@@ -1,5 +1,6 @@
 import { FIREBASE, CLOUD, normalizeName, nameProblem } from '../config/cloud.js';
 import { fmt } from './MissionSystem.js';
+import { PLAYER_UPGRADES } from '../config/balance.js';
 const escHtml = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /**
@@ -83,6 +84,7 @@ export class CloudSystem {
     return {
       level: s.level, xp: Math.floor(s.xp), money: Math.floor(s.money), gold: Math.floor(s.gold),
       totalEarned: Math.floor(s.stats?.moneyEarned || 0), zones: (s.zones || []).length, zoneList: [...(s.zones || [])].slice(0, 80),
+      speed: g.state.player?.up?.speed || 0, speedMax: PLAYER_UPGRADES.speed.max,
       workers, animals, logs, trees: Math.floor(s.stats?.treesFelled || 0), trucks: Math.floor(s.stats?.trucksShipped || 0),
       playTime: Math.floor(s.playTime || 0), noAds: !!s.purchases?.noAds, premium: !!s.purchases?.premium,
       platform: (window.Capacitor?.getPlatform?.() || 'web'), version: '1.0.0',
@@ -248,6 +250,7 @@ export class CloudSystem {
     const num = (x) => (x === undefined || x === null || x === '' || !isFinite(Number(x)) ? null : Math.max(0, Math.floor(Number(x))));
     const changed = [];
     if (num(v.level) !== null) { s.level = Math.max(1, num(v.level)); changed.push(`Seviye ${s.level}`); }
+    if (num(v.speed) !== null) { this.setSpeed(num(v.speed) - 1); changed.push(`Hareket hızı Sv.${s.player.up.speed + 1}`); }
     if (num(v.xp) !== null) { s.xp = num(v.xp); changed.push(`${fmt(s.xp)} XP`); }
     try { const need = g.levels.need; if (s.xp >= need) s.xp = need - 1; } catch {}
     if (num(v.gold) !== null) { const d = num(v.gold) - s.gold; s.gold = num(v.gold); g.bus.emit('gold', { amount: d, source: 'admin' }); changed.push(`${fmt(s.gold)} altın`); }
@@ -267,7 +270,9 @@ export class CloudSystem {
 
   giftLines(items) {
     const L = [];
-    if (items.level) L.push(`<div class="gl">⭐ <b>+${fmt(items.level)}</b> seviye</div>`);
+    const sg = (v) => (v > 0 ? '+' : '−') + fmt(Math.abs(v));
+    if (items.level) L.push(`<div class="gl">⭐ <b>${sg(items.level)}</b> seviye</div>`);
+    if (items.speed) L.push(`<div class="gl">🏃 <b>${sg(items.speed)}</b> hareket hızı seviyesi</div>`);
     if (items.gold) L.push(`<div class="gl">🪙 <b>${fmt(items.gold)}</b> altın</div>`);
     if (items.money) L.push(`<div class="gl">💰 <b>${fmt(items.money)}</b> para</div>`);
     if (items.xp) L.push(`<div class="gl">⭐ <b>${fmt(items.xp)}</b> XP</div>`);
@@ -280,9 +285,10 @@ export class CloudSystem {
     const open = () => {
       if (document.querySelector('.modal-wrap')) { setTimeout(open, 4000); return; }
       const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-      const m = g.ui.modal(`<div class="giftbox"><div class="gift-ic">🎁</div><h2>Hediyen var!</h2>
+      const neg = Object.values(items).some((v) => Number(v) < 0);
+      const m = g.ui.modal(`<div class="giftbox"><div class="gift-ic">${neg ? '🛠️' : '🎁'}</div><h2>${neg ? 'Hesabında değişiklik var' : 'Hediyen var!'}</h2>
         ${data.msg ? `<p class="gift-msg">${esc(data.msg)}</p>` : ''}<div class="gift-items">${this.giftLines(items)}</div>
-        <button class="btn green wide" id="gift-take">Al</button></div>`);
+        <button class="btn green wide" id="gift-take">${neg ? 'Tamam' : 'Al'}</button></div>`);
       m.querySelector('#gift-take').addEventListener('click', async (e) => {
         e.target.disabled = true;
         const ok = await this.claimGift(id, items);
@@ -294,6 +300,13 @@ export class CloudSystem {
   }
 
   /** Önce "alındı" kaydı yazılır (kurallar ikinciye izin vermez) → sonra ödül verilir: aynı hediye iki kez alınamaz */
+  /** Karakterin hareket hızı yükseltme seviyesini ayarla (0…max; oyunda "Sv." = bu + 1). Anında etkili olur. */
+  setSpeed(up) {
+    const g = this.game; const pu = g.state.player.up;
+    pu.speed = Math.max(0, Math.min(PLAYER_UPGRADES.speed.max, Math.floor(up)));
+    g.bus.emit('upgrade', { target: 'player', key: 'speed', level: pu.speed, source: 'admin' });
+  }
+
   async claimGift(id, items) {
     const F = this.F; const g = this.game;
     try {
@@ -303,7 +316,9 @@ export class CloudSystem {
     if (n(items.gold)) g.economy.addGold(n(items.gold), 'gift');
     if (n(items.money)) g.economy.addMoney(n(items.money), 'gift');
     if (n(items.xp)) g.levels.addXP(n(items.xp));
-    if (n(items.level)) { const s = g.state; s.level = Math.max(1, s.level + Math.min(1000, n(items.level))); try { const need = g.levels.need; if (s.xp >= need) s.xp = need - 1; } catch {} g.bus.emit('xp', { amount: 0 }); }
+    const sn = (v) => Math.trunc(Number(v) || 0);
+    if (sn(items.speed)) this.setSpeed((g.state.player.up.speed || 0) + sn(items.speed));
+    if (sn(items.level)) { const s = g.state; s.level = Math.max(1, s.level + Math.max(-1000, Math.min(1000, sn(items.level)))); try { const need = g.levels.need; if (s.xp >= need) s.xp = need - 1; } catch {} g.bus.emit('xp', { amount: 0 }); }
     if (n(items.logs) > 50000) items = { ...items, logs: 50000 };
     if (n(items.logs)) {
       const d = g.sites.get('depot1');

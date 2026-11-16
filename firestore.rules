@@ -29,7 +29,7 @@ service cloud.firestore {
       // aynı anda usernames/{nameLower} kaydı bu oyuncu adına oluşturulmuş olmalı (getAfter = toplu yazmanın sonucu).
       allow create, update: if isMe(uid)
         && request.resource.data.keys().hasOnly(['name', 'nameLower', 'level', 'xp', 'money', 'gold', 'totalEarned', 'zones', 'zoneList',
-             'workers', 'animals', 'logs', 'trees', 'trucks', 'playTime', 'noAds', 'premium', 'platform', 'version', 'lastSeen', 'createdAt'])
+             'speed', 'speedMax', 'workers', 'animals', 'logs', 'trees', 'trucks', 'playTime', 'noAds', 'premium', 'platform', 'version', 'lastSeen', 'createdAt'])
         && (
           request.resource.data.get('nameLower', null) == (resource == null ? null : resource.data.get('nameLower', null))
           || (

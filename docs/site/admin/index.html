@@ -89,6 +89,7 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <h3>Değerleri düzenle</h3>
     <p class="muted" style="margin-top:-6px">Girdiğin değer oyuncunun hesabındaki değerin <b>yerine geçer</b>. Boş bırakılan alan değişmez. Oyun açıksa hemen, kapalıysa açınca uygulanır.</p>
     <div class="row"><div><label>Seviye</label><input type="number" min="1" id="s-level"></div><div><label>XP (seviye içi)</label><input type="number" min="0" id="s-xp"></div></div>
+    <div class="row" style="margin-top:8px"><div><label>Hareket hızı (Sv.1–16)</label><input type="number" min="1" max="16" id="s-speed"></div><div></div></div>
     <div class="row" style="margin-top:8px"><div><label>Altın</label><input type="text" autocomplete="off" id="s-gold" data-amt></div><div><label>Para</label><input type="text" autocomplete="off" id="s-money" data-amt></div></div>
     <p class="muted" style="margin:6px 0 0">Kısaltma yazabilirsin: <b>400B</b>, <b>1,5T</b>, <b>359AB</b>, <b>400A</b> (=400AA). Birimler: K=bin, M=milyon, B=milyar, T, Q, AA, AB … (her biri ×1000)</p>
     <div style="margin-top:8px"><label>Not (isteğe bağlı, oyuncuya gösterilir)</label><input id="s-msg" maxlength="140" placeholder="ör. Destek talebin çözüldü"></div>
@@ -192,10 +193,17 @@ $('#reload').onclick = loadAll;
 document.querySelectorAll('th[data-s]').forEach((th) => th.onclick = () => { const k = th.dataset.s; sortDir = sortKey === k ? -sortDir : -1; sortKey = k; renderPlayers(); });
 $('#rows').onclick = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr) openPlayer(players.find((p) => p.id === tr.dataset.id)); };
 
-const ADD_FIELDS = [['level', '⭐ Seviye'], ['gold', '🪙 Altın'], ['money', '💰 Para'], ['xp', '✨ XP'], ['logs', '🪵 Kütük']];
+// Seviye ve hareket hızı artırılıp AZALTILABİLİR (+2 / -1); diğerleri yalnızca eklenir.
+const SIGNED = new Set(['level', 'speed']);
+const SPEED_MAX = 15; // oyundaki PLAYER_UPGRADES.speed.max (oyunda Sv.1…16)
+const parseSigned = (t) => { t = String(t ?? '').trim().replace(/\s+/g, '').replace('−', '-'); if (!t) return null; if (!/^[+-]?\d+$/.test(t)) return NaN; return parseInt(t, 10); };
+const showVal = (k, v) => v == null ? '—' : k === 'speed' ? `Sv.${v + 1}` : k === 'level' ? String(v) : big(v);
+const afterVal = (k, cur, v, max) => k === 'speed' ? Math.max(0, Math.min(max ?? SPEED_MAX, cur + v)) : k === 'level' ? Math.max(1, cur + v) : cur + v;
+const ADD_FIELDS = [['level', '⭐ Seviye'], ['speed', '🏃 Hareket hızı'], ['gold', '🪙 Altın'], ['money', '💰 Para'], ['xp', '✨ XP'], ['logs', '🪵 Kütük']];
 const giftForm = (p) => `<div class="addgrid"><div class="ah">Alan</div><div class="ah">Şu an</div><div class="ah">Ekle</div>
-  ${ADD_FIELDS.map(([k, name]) => `<div class="an">${name}</div><div class="ac">${p ? `<b>${k === 'level' ? (p.level ?? '?') : big(p[k])}</b>` : '<span class="muted">—</span>'}</div>
-    <div><input type="text" autocomplete="off" id="g-${k}" data-amt data-cur="${p && p[k] != null ? p[k] : ''}" data-k="${k}" placeholder="${k === 'level' ? '+ ör. 2' : '+ ör. 400B'}"></div>`).join('')}</div>
+  ${ADD_FIELDS.map(([k, name]) => `<div class="an">${name}</div><div class="ac">${p ? `<b>${showVal(k, p[k])}</b>${k === 'speed' && p.speed != null ? `<span class="muted"> / Sv.${(p.speedMax ?? SPEED_MAX) + 1}</span>` : ''}` : '<span class="muted">—</span>'}</div>
+    <div><input type="text" autocomplete="off" id="g-${k}" data-amt data-cur="${p && p[k] != null ? p[k] : ''}" data-max="${p?.speedMax ?? SPEED_MAX}" data-k="${k}" placeholder="${SIGNED.has(k) ? 'ör. +2 veya -1' : '+ ör. 400B'}"></div>`).join('')}</div>
+  <p class="muted" style="margin:6px 0 0"><b>Seviye</b> ve <b>hareket hızı</b> azaltılabilir: başına eksi koy (ör. <b>-2</b>). Hareket hızı oyundaki gibi Sv.1 ile Sv.${SPEED_MAX + 1} arasında kalır.${p && p.speed == null ? ' <span class="err">Bu oyuncunun hız bilgisi henüz yok (oyunun eski sürümü).</span>' : ''}</p>
   <p class="muted" style="margin:6px 0 0">Yazdığın miktar <b>mevcut değerin üstüne eklenir</b>; her kutunun altında eklendikten sonraki değer görünür. Kısaltma: <b>400B</b>, <b>1,5T</b>, <b>400A</b>, <b>359AB</b> (K=bin, M=milyon, B=milyar, T, Q, AA, AB… her biri ×1000). Değerler oyuncunun son eşitlemesine göredir (en fazla ~5 dk eski olabilir).</p>
   <div style="margin-top:8px"><label>Mesaj (isteğe bağlı, oyuncuya gösterilir)</label><input id="g-msg" maxlength="140" placeholder="ör. Turnuva ödülün!"></div>
   <div style="margin-top:8px"><label>Geçerlilik</label><select id="g-exp"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7" selected>7 gün</option><option value="30">30 gün</option></select></div>`;
@@ -204,13 +212,13 @@ function openPlayer(p) {
   current = p;
   $('#dp-title').textContent = p ? pname(p) : 'Herkese hediye';
   $('#dp-sub').textContent = p ? `Kimlik: ${p.id}` : 'Tüm oyuncular oyunu açtıklarında bir kez alır (yeni katılanlar dahil, geçerlilik süresince).';
-  $('#dp-kv').innerHTML = p ? [['Seviye', p.level], ['XP', big(p.xp)], ['Para', big(p.money)], ['Altın', big(p.gold)], ['Toplam kazanç', big(p.totalEarned)], ['Alan sayısı', p.zones],
+  $('#dp-kv').innerHTML = p ? [['Seviye', p.level], ['Hareket hızı', p.speed == null ? '— (eski sürüm)' : `Sv.${p.speed + 1} / Sv.${(p.speedMax ?? SPEED_MAX) + 1}`], ['XP', big(p.xp)], ['Para', big(p.money)], ['Altın', big(p.gold)], ['Toplam kazanç', big(p.totalEarned)], ['Alan sayısı', p.zones],
     ['İşçi', p.workers], ['Hayvan', p.animals], ['Depodaki kütük', big(p.logs)], ['Kesilen ağaç', big(p.trees)], ['Gönderilen kamyon', big(p.trucks)], ['Oynama süresi', hrs(p.playTime)],
     ['Premium / Reklamsız', p.premium || p.noAds ? 'Evet' : 'Hayır'], ['Platform', p.platform], ['Son görülme', dt(p.lastSeen)], ['Katılma', dt(p.createdAt)]]
     .map(([k, v]) => `<span>${k}</span><b>${esc(v ?? '—')}</b>`).join('') : '';
   $('#dp-form').innerHTML = giftForm(p); $('#dp-add-title').textContent = p ? 'Ekle (mevcut değerin üstüne)' : 'Herkese hediye (her oyuncunun kendi değerinin üstüne)'; $('#dp-msg').textContent = ''; $('#dp-set-msg').textContent = '';
   $('#dp-set-wrap').classList.toggle('hide', !p);
-  if (p) { for (const k of ['level', 'xp', 'gold', 'money']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : big(p[k])); } $('#s-msg').value = ''; }
+  if (p) { for (const k of ['level', 'xp', 'gold', 'money', 'speed']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : k === 'speed' ? (p.speed == null ? '?' : p.speed + 1) : big(p[k])); } $('#s-msg').value = ''; }
   amtPreview();
   $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false;
   if (p) xferInit(p);
@@ -265,9 +273,9 @@ $('#x-go').onclick = async () => {
 function amtPreview() {
   for (const el of document.querySelectorAll('[data-amt], #s-level, #s-xp')) {
     let hint = el.nextElementSibling; if (!hint || !hint.classList.contains('amt-hint')) { hint = document.createElement('div'); hint.className = 'amt-hint muted'; el.after(hint); }
-    const show = () => { const v = parseAmt(el.value); const cur = el.dataset.cur === undefined || el.dataset.cur === '' ? null : Number(el.dataset.cur);
+    const show = () => { const k = el.dataset.k; const v = SIGNED.has(k) ? parseSigned(el.value) : parseAmt(el.value); const cur = el.dataset.cur === undefined || el.dataset.cur === '' ? null : Number(el.dataset.cur);
       hint.innerHTML = v === null ? '' : Number.isNaN(v) ? '<span class="err">anlaşılamadı</span>'
-        : el.dataset.k ? `+${nf.format(v)}${cur !== null ? ` → yeni: <b>${el.dataset.k === 'level' ? cur + v : big(cur + v)}</b>` : ''}`
+        : k ? `${v < 0 ? '−' + nf.format(-v) : '+' + nf.format(v)}${cur !== null ? ` → yeni: <b>${showVal(k, afterVal(k, cur, v, Number(el.dataset.max)))}</b>` : ''}`
         : `= ${nf.format(v)}${v >= 1e4 ? ' (' + big(v) + ')' : ''}`; };
     el.oninput = show; show();
   }
@@ -275,11 +283,12 @@ function amtPreview() {
 $('#gift-all').onclick = () => openPlayer(null);
 $('#dp-close').onclick = () => $('#dlg-player').close();
 $('#dp-send').onclick = async () => {
-  const items = {}; for (const k of ['level', 'gold', 'money', 'xp', 'logs']) { const v = parseAmt($('#g-' + k).value); if (Number.isNaN(v)) { $('#dp-msg').innerHTML = '<span class="err">Miktarı anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v) items[k] = v; }
+  const items = {}; for (const k of ['level', 'speed', 'gold', 'money', 'xp', 'logs']) { const v = SIGNED.has(k) ? parseSigned($('#g-' + k).value) : parseAmt($('#g-' + k).value); if (Number.isNaN(v)) { $('#dp-msg').innerHTML = '<span class="err">Miktarı anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v) items[k] = v; }
   if (items.logs > 50000) { $('#dp-msg').innerHTML = '<span class="err">Kütük en fazla 50.000 eklenebilir (depoya tek tek konuyor).</span>'; return; }
-  if (items.level > 1000) { $('#dp-msg').innerHTML = '<span class="err">Seviye bir seferde en fazla +1000 eklenebilir.</span>'; return; }
+  if (items.speed && current && current.speed == null) { $('#dp-msg').innerHTML = '<span class="err">Bu oyuncunun hız bilgisi yok; oyunu güncelleyince değiştirebilirsin.</span>'; return; }
+  if (Math.abs(items.level || 0) > 1000) { $('#dp-msg').innerHTML = '<span class="err">Seviye bir seferde en fazla +1000 eklenebilir.</span>'; return; }
   if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
-  if (!confirm((current ? pname(current) : 'TÜM oyuncular') + ' için eklenecek:\n' + Object.entries(items).map(([k, v]) => `${({ level: 'Seviye', gold: 'Altın', money: 'Para', xp: 'XP', logs: 'Kütük' })[k]}: ` + (current && current[k] != null ? `${k === 'level' ? current[k] : big(current[k])} + ${k === 'level' ? v : big(v)} = ${k === 'level' ? current[k] + v : big(current[k] + v)}` : `+${big(v)}`)).join('\n') + '\n\nGönderilsin mi?')) return;
+  if (!confirm((current ? pname(current) : 'TÜM oyuncular') + ' için:\n' + Object.entries(items).map(([k, v]) => `${({ level: 'Seviye', speed: 'Hareket hızı', gold: 'Altın', money: 'Para', xp: 'XP', logs: 'Kütük' })[k]}: ` + (current && current[k] != null ? `${showVal(k, current[k])} ${v < 0 ? '−' : '+'} ${SIGNED.has(k) ? Math.abs(v) : big(v)} = ${showVal(k, afterVal(k, current[k], v, current.speedMax))}` : `${v < 0 ? '' : '+'}${SIGNED.has(k) ? v : big(v)}`)).join('\n') + '\n\nGönderilsin mi?')) return;
   if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
   const to = current ? current.id : 'all';
   if (to === 'all' && !confirm('Bu hediye TÜM oyunculara gidecek. Emin misin?')) return;
@@ -297,13 +306,14 @@ $('#dp-send').onclick = async () => {
 $('#dp-set').onclick = async () => {
   if (!current) return;
   const val = (id) => parseAmt($(id).value);
-  const now = { level: current.level, xp: current.xp, gold: current.gold, money: current.money };
+  const now = { level: current.level, xp: current.xp, gold: current.gold, money: current.money, speed: current.speed == null ? null : current.speed + 1 };
   const set = {};
-  for (const k of ['level', 'xp', 'gold', 'money']) { const v = val('#s-' + k); if (Number.isNaN(v)) { $('#dp-set-msg').innerHTML = '<span class="err">Değeri anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v !== null && v !== now[k]) set[k] = v; }
+  for (const k of ['level', 'xp', 'gold', 'money', 'speed']) { const v = val('#s-' + k); if (Number.isNaN(v)) { $('#dp-set-msg').innerHTML = '<span class="err">Değeri anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v !== null && v !== now[k]) set[k] = v; }
   if (set.level === 0) set.level = 1;
+  if (set.speed != null) set.speed = Math.max(1, Math.min((current.speedMax ?? SPEED_MAX) + 1, set.speed));
   if (!Object.keys(set).length) { $('#dp-set-msg').innerHTML = '<span class="err">Değiştirilen bir değer yok.</span>'; return; }
-  const label = { level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' };
-  if (!confirm(`${pname(current)} için:\n` + Object.entries(set).map(([k, v]) => `${label[k]}: ${big(now[k])} → ${big(v)}`).join('\n') + '\n\nKaydedilsin mi?')) return;
+  const label = { level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hareket hızı (Sv.)' };
+  if (!confirm(`${pname(current)} için:\n` + Object.entries(set).map(([k, v]) => `${label[k]}: ${now[k] == null ? '?' : big(now[k])} → ${big(v)}`).join('\n') + '\n\nKaydedilsin mi?')) return;
   $('#dp-set').disabled = true;
   try {
     await addDoc(collection(db, 'gifts'), { to: current.id, toName: pname(current), kind: 'set', set, msg: $('#s-msg').value.trim().slice(0, 140), createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid });
@@ -316,10 +326,10 @@ $('#dp-set').onclick = async () => {
 async function loadGifts() {
   try {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
-    const label = { level: 'seviye', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
+    const label = { level: 'seviye', speed: 'hız seviyesi', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
     $('#gift-rows').innerHTML = snap.docs.map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
-      const what = g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' })[k] || k} = ${big(v)}`).join(', ')
-        : Object.entries(g.items || {}).map(([k, v]) => `${big(v)} ${label[k] || k}`).join(', ');
+      const what = g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
+        : Object.entries(g.items || {}).map(([k, v]) => `${v > 0 ? '+' : ''}${big(v)} ${label[k] || k}`).join(', ');
       return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
       <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';
   } catch (e) { $('#gift-rows').innerHTML = `<tr><td colspan="5" class="err">${esc(e.code || e.message)}</td></tr>`; }
