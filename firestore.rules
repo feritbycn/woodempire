@@ -7,6 +7,7 @@ rules_version = '2';
 //   players/{uid}/claimed/{giftId} alınmış hediyeler: sahibi bir kez oluşturur, değiştirilemez
 //   usernames/{adKucukHarf}        benzersiz ad: bir kez oluşturulur, başkası alamaz, değiştirilemez
 //   gifts/{id}                     hediyeler: yalnızca yönetici yazar; alıcısı (veya herkes için olanı) okur
+//   saves/{uid}                    tam oyun kaydının yedeği (hesap aktarımı için): yalnızca sahibi yazar; sahibi ve yönetici okur
 //   admins/{uid}                   yöneticiler: konsoldan elle eklenir, oyundan/panelden yazılamaz
 service cloud.firestore {
   match /databases/{db}/documents {
@@ -44,6 +45,14 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isAdmin();
       }
+    }
+
+    match /saves/{uid} {
+      allow read: if isMe(uid) || isAdmin();
+      allow create, update: if isMe(uid)
+        && request.resource.data.keys().hasOnly(['data', 'enc', 'size', 'level', 'at'])
+        && request.resource.data.data is string && request.resource.data.data.size() < 1000000;
+      allow delete: if isMe(uid) || isAdmin();
     }
 
     match /usernames/{name} {

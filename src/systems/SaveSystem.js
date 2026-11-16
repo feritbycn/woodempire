@@ -116,7 +116,7 @@ export class SaveSystem {
   }
 
   async save() {
-    if (this.writing || !this.game.ready) return;
+    if (this.writing || !this.game.ready || this.locked) return;
     this.writing = true;
     try {
       const data = JSON.stringify(this.collect());
@@ -133,6 +133,18 @@ export class SaveSystem {
       this.lastResult = { ok: false, error: String(e) };
     }
     this.writing = false;
+  }
+
+  /** Hesap aktarımı: verilen oyun durumunu iki yuvaya da yazar ve kaydı kilitler (oyun yeniden başlatılana dek
+   *  eski durum üzerine yazılmasın). Ardından sayfa yeniden yüklenmelidir. */
+  async replaceWith(state) {
+    this.locked = true;
+    for (let i = 0; i < 50 && this.writing; i++) await new Promise((r) => setTimeout(r, 50));
+    const data = JSON.stringify(state);
+    for (let i = 0; i < KEYS.length; i++) {
+      this.n++;
+      await backend.set(KEYS[i], JSON.stringify({ v: SAVE_VERSION, n: this.n, t: Date.now(), sum: fnv(data), data }));
+    }
   }
 
   async reset() {

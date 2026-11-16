@@ -1,5 +1,6 @@
 import { FIREBASE, CLOUD, normalizeName, nameProblem } from '../config/cloud.js';
 import { fmt } from './MissionSystem.js';
+const escHtml = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /**
  * BULUT: isimsiz oyuncu kimliği (Firebase Anonymous Auth), oyuncu özeti (yönetim paneli için),
@@ -104,8 +105,57 @@ export class CloudSystem {
       }
       await F.setDoc(ref, data, { merge: true });
       this.lastSync = Date.now();
+      await this.backup();
     } catch (e) { console.warn('[Bulut] eşitleme hatası', e?.code || e); }
     this.syncing = false;
+  }
+
+  /** Tam oyun kaydının bulut yedeği (saves/{uid}): yönetici panelinden hesap aktarımı için.
+   *  Yalnızca değiştiyse yazılır; çok büyükse gzip + base64 ile sıkıştırılır. */
+  async backup() {
+    if (this.status !== 'ok' || this.game.save.locked) return;
+    const F = this.F;
+    try {
+      let data = JSON.stringify(this.game.save.collect()), enc = 'json';
+      const sig = data.length + ':' + data.slice(-200) + ':' + this.game.state.level + ':' + Math.floor(this.game.state.money);
+      if (sig === this.lastBackupSig) return;
+      if (data.length > 700000 && typeof CompressionStream !== 'undefined') {
+        const buf = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+        let bin = ''; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+        data = btoa(bin); enc = 'gz';
+      }
+      if (data.length > 950000) return; // Firestore belge sınırı (1 MB)
+      await F.setDoc(F.doc(this.db, 'saves', this.uid), { data, enc, size: data.length, level: this.game.state.level, at: F.serverTimestamp() });
+      this.lastBackupSig = sig;
+    } catch (e) { console.warn('[Bulut] yedek', e?.code || e); }
+  }
+
+  static async decodeSave(data, enc) {
+    if (enc !== 'gz') return data;
+    const bin = atob(data); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  }
+
+  /** HESAP AKTARIMI: yönetici başka bir hesabın kaydını bu hesaba gönderdi. Bu hesabın ilerlemesi onunla değiştirilir;
+   *  bu hesabın kimliği ve kullanıcı adı korunur. Önce "alındı" kaydı yazılır → ikinci kez uygulanmaz. */
+  async applyRestore(id, x) {
+    const F = this.F; const g = this.game;
+    let st;
+    try { st = JSON.parse(await CloudSystem.decodeSave(x.save, x.enc)); if (!st || typeof st !== 'object' || !st.level) throw new Error('geçersiz kayıt'); }
+    catch (e) { console.warn('[Bulut] aktarım okunamadı', e); return; }
+    try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }
+    catch (e) { console.warn('[Bulut] aktarım kaydı', e?.code || e); return; }
+    st.cloud = { ...(st.cloud || {}), uid: this.uid, name: g.state.cloud?.name || null };
+    st.lastSeen = Date.now();
+    this.status = 'restoring'; // yeniden başlatılana dek eski durum buluta yazılmasın
+    await g.save.replaceWith(st);
+    const reload = () => location.reload();
+    const m = g.ui.modal(`<div class="giftbox"><div class="gift-ico">🔄</div><h2>Hesabın aktarıldı</h2>
+      ${x.msg ? `<p class="gift-msg">${escHtml(x.msg)}</p>` : ''}<p>Oyun verilerin yönetici tarafından ${x.fromName ? `<b>${escHtml(x.fromName)}</b> hesabından ` : ''}bu hesaba aktarıldı (Seviye ${fmt(st.level)}, ${fmt(st.money || 0)} para).</p>
+      <p class="muted">Oyun yeniden başlatılıyor…</p><button class="btn green wide" id="rs-ok">Yeniden başlat</button></div>`, { sticky: true });
+    m.close = () => {};
+    m.querySelector('#rs-ok').addEventListener('click', reload);
+    setTimeout(reload, 8000);
   }
 
   // ---------- KULLANICI ADI ----------
@@ -181,6 +231,7 @@ export class CloudSystem {
       for (const d of list) {
         this.shownGift.add(d.id);
         const x = d.data();
+        if (x.kind === 'restore') { if (x.to === this.uid && x.save) this.applyRestore(d.id, x); continue; }
         if (x.kind === 'set') this.applySet(d.id, x); else this.showGift(d.id, x); // yönetici düzenlemesi pencere açmadan uygulanır
       }
     } catch (e) { console.warn('[Bulut] hediye kontrolü', e?.code || e); }
@@ -277,6 +328,7 @@ export class CloudSystem {
       const b = F.writeBatch(this.db);
       if (c.name) b.delete(F.doc(this.db, 'usernames', normalizeName(c.name)));
       b.delete(F.doc(this.db, 'players', this.uid));
+      b.delete(F.doc(this.db, 'saves', this.uid));
       await b.commit();
       c.name = null; this.game.save.requestSave();
       this.status = 'deleted'; // bu oturumda tekrar yazılmaz

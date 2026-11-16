@@ -95,6 +95,16 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="dp-set">Değerleri kaydet</button></div></div>
     <p id="dp-set-msg"></p>
   </details>
+  <details id="dp-xfer" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">🔄 Hesap aktarımı (bu hesabın verilerini başka hesaba taşı)</summary>
+    <p class="muted" id="x-backup" style="margin-top:8px"></p>
+    <label>Hedef hesap (kullanıcı adı veya kimlik)</label>
+    <input id="x-to" autocomplete="off" list="x-list" placeholder="ör. Ali_123 veya Oyuncu #AB12CD veya tam kimlik"><datalist id="x-list"></datalist>
+    <div id="x-target" style="margin-top:8px"></div>
+    <div style="margin-top:8px"><label>Not (isteğe bağlı, hedef oyuncuya gösterilir)</label><input id="x-msg-in" maxlength="140" placeholder="ör. Eski telefonundaki hesabın taşındı"></div>
+    <p class="muted" style="margin:8px 0 0">Kaynak hesabın tüm oyun ilerlemesi (seviye, para, altın, alanlar, işçiler, makineler…) hedef hesaba <b>kopyalanır</b>. Hedef hesabın kendi ilerlemesi <b>silinir</b>, kullanıcı adı ve kimliği aynı kalır. Kaynak hesap olduğu gibi kalır. Hedef oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır ve oyun yeniden başlar.</p>
+    <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="x-go" class="danger">Aktar</button></div></div>
+    <p id="x-msg"></p>
+  </details>
 
 </div></dialog>
 
@@ -202,8 +212,55 @@ function openPlayer(p) {
   $('#dp-set-wrap').classList.toggle('hide', !p);
   if (p) { for (const k of ['level', 'xp', 'gold', 'money']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : big(p[k])); } $('#s-msg').value = ''; }
   amtPreview();
+  $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false;
+  if (p) xferInit(p);
   $('#dlg-player').showModal();
 }
+
+// ---------- HESAP AKTARIMI ----------
+let xferSave = null, xferTarget = null;
+function findPlayer(q) {
+  q = String(q || '').trim(); if (!q) return null;
+  const low = q.toLocaleLowerCase('tr-TR').replace(/^oyuncu\s*#/, '');
+  return players.find((x) => x.id === q) || players.find((x) => (x.nameLower || '') === low || (x.name || '').toLocaleLowerCase('tr-TR') === low)
+    || (low.length >= 6 ? players.find((x) => x.id.toLowerCase().startsWith(low)) : null) || null;
+}
+async function xferInit(p) {
+  xferSave = null; xferTarget = null;
+  $('#x-to').value = ''; $('#x-target').innerHTML = ''; $('#x-msg').textContent = ''; $('#x-msg-in').value = '';
+  $('#x-list').innerHTML = players.filter((x) => x.id !== p.id).slice(0, 300).map((x) => `<option value="${esc(x.name || x.id)}">${esc(pname(x))} · Sv.${x.level ?? '?'}</option>`).join('');
+  $('#x-backup').textContent = 'Bulut yedeği kontrol ediliyor…';
+  try {
+    const snap = await getDoc(doc(db, 'saves', p.id));
+    if (current !== p) return;
+    if (!snap.exists()) { $('#x-backup').innerHTML = '<span class="err">Bu oyuncunun bulut yedeği yok.</span> Oyuncu oyunun yeni sürümünü açınca (en geç 5 dk içinde) yedek oluşur.'; return; }
+    xferSave = snap.data();
+    $('#x-backup').innerHTML = `Bulut yedeği: <b>${ago(xferSave.at)}</b> · Seviye ${xferSave.level ?? '?'} · ${Math.max(1, Math.round((xferSave.size || 0) / 1024))} KB`;
+  } catch (e) { $('#x-backup').innerHTML = `<span class="err">Yedek okunamadı: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
+}
+$('#x-to').oninput = () => {
+  const t = findPlayer($('#x-to').value);
+  xferTarget = t && current && t.id !== current.id ? t : null;
+  $('#x-target').innerHTML = !$('#x-to').value.trim() ? '' : !t ? '<span class="err">Bu ad veya kimlikte oyuncu bulunamadı.</span>'
+    : t.id === current?.id ? '<span class="err">Kaynak ve hedef aynı hesap.</span>'
+    : `Hedef: <b>${esc(pname(t))}</b> · Seviye ${t.level ?? '?'} · Para ${big(t.money)} · Altın ${big(t.gold)} · ${ago(t.lastSeen)} görüldü<br><span class="muted">Kimlik: ${esc(t.id)}</span>`;
+};
+$('#x-go').onclick = async () => {
+  const src = current;
+  if (!src) return;
+  if (!xferSave) { $('#x-msg').innerHTML = '<span class="err">Kaynak hesabın bulut yedeği yok.</span>'; return; }
+  if (!xferTarget) { $('#x-msg').innerHTML = '<span class="err">Önce geçerli bir hedef hesap seç.</span>'; return; }
+  const t = xferTarget;
+  if (!confirm(`HESAP AKTARIMI\n\nKaynak: ${pname(src)} (Seviye ${xferSave.level ?? src.level}, ${big(src.money)} para)\nHedef: ${pname(t)} (Seviye ${t.level}, ${big(t.money)} para)\n\n${pname(t)} hesabının mevcut ilerlemesi SİLİNECEK ve yerine ${pname(src)} hesabının verileri gelecek.\nBu işlem geri alınamaz. Devam edilsin mi?`)) return;
+  $('#x-go').disabled = true;
+  try {
+    await addDoc(collection(db, 'gifts'), { to: t.id, toName: pname(t), kind: 'restore', save: xferSave.data, enc: xferSave.enc || 'json', level: xferSave.level ?? null,
+      fromUid: src.id, fromName: pname(src), msg: $('#x-msg-in').value.trim().slice(0, 140), createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid });
+    $('#x-msg').innerHTML = `<span class="ok">Aktarım gönderildi! ${esc(pname(t))} oyunu açıksa birkaç saniye içinde, kapalıysa açınca uygulanır.</span>`;
+    loadGifts();
+  } catch (e) { $('#x-msg').innerHTML = `<span class="err">Gönderilemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#x-go').disabled = false;
+};
 /** Kısaltmalı kutuların altında girilen değerin açılımı gösterilir (400B = 400.000.000.000). */
 function amtPreview() {
   for (const el of document.querySelectorAll('[data-amt], #s-level, #s-xp')) {
@@ -261,7 +318,7 @@ async function loadGifts() {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
     const label = { level: 'seviye', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
     $('#gift-rows').innerHTML = snap.docs.map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
-      const what = g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' })[k] || k} = ${big(v)}`).join(', ')
+      const what = g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para' })[k] || k} = ${big(v)}`).join(', ')
         : Object.entries(g.items || {}).map(([k, v]) => `${big(v)} ${label[k] || k}`).join(', ');
       return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
       <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';
