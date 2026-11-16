@@ -83,11 +83,11 @@ export class SaveSystem {
     this.lastResult = null;
     game.every(10, () => this.save());
     game.every(1, () => { if (this.dirty && performance.now() - this.lastSave > 1500) this.save(); });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.save(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { this.game.economy?.flushRates?.(); this.save(); } });
     window.addEventListener('pagehide', () => this.save());
     if (Capacitor.isNativePlatform()) {
       import('@capacitor/app').then(({ App }) => {
-        App.addListener('pause', () => this.save());
+        App.addListener('pause', () => { this.game.economy?.flushRates?.(); this.save(); });
         App.addListener('appStateChange', ({ isActive }) => { if (!isActive) this.save(); });
       }).catch(() => {});
     }

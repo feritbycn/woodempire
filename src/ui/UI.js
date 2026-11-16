@@ -4,7 +4,7 @@ import { fmt } from '../systems/MissionSystem.js';
 import { Panels } from './Panels.js';
 import { WorldLabels } from './WorldLabels.js';
 import { Capacitor } from '@capacitor/core';
-import { xpGainMul, OFFLINE, BOOSTS, WORKER_ROLES } from '../config/balance.js';
+import { xpGainMul, xpForLevel, OFFLINE, BOOSTS, WORKER_ROLES } from '../config/balance.js';
 import { DWELL_T } from '../systems/PlayerController.js';
 import { LOGIN_REWARDS } from '../systems/DailyRewardSystem.js';
 
@@ -471,18 +471,46 @@ export class UI {
   startupFlow(offlineSec) {
     const g = this.game;
     const steps = [];
+    if (!this.resumeWatched) { this.resumeWatched = true; this.watchResume(); }
     if (g.fresh) steps.push(() => this.welcome());
-    if (offlineSec > 120 && (g.state.autoRate > 0.05 || g.state.autoXpRate > 0.001)) {
-      const sec = Math.min(offlineSec, OFFLINE.maxSeconds);
-      const amount = Math.round(sec * g.state.autoRate * OFFLINE.factor);
-      // kapalıyken XP: makinelerin ve kamyonların oyun açıkken kazandırdığı XP hızına göre
-      const xp = Math.round(sec * (g.state.autoXpRate || 0) * OFFLINE.factor);
-      if (amount > 0 || xp > 0) steps.push(() => this.offline(amount, sec, xp));
-    }
+    const off = this.offlineCalc(offlineSec);
+    if (off) steps.push(() => this.offline(off.amount, off.sec, off.xp));
     if (!g.fresh && g.daily.canClaimLogin()) steps.push(() => this.panels.dailyLogin());
     // modallar sırayla gösterilir: biri kapanınca sonraki açılır
     const run = () => { const s = steps.shift(); if (!s) return; const m = s(); if (m) { const orig = m.close; m.close = () => { orig(); setTimeout(run, 300); }; } };
     run();
+  }
+  /** Uzakta geçen süreye göre kazanç. Hem oyun kapatılıp açılınca hem de arka plandan dönünce kullanılır. */
+  offlineCalc(offlineSec) {
+    const g = this.game, s = g.state;
+    if (!(offlineSec > 120) || !(s.autoRate > 0.05 || s.autoXpRate > 0.001)) return null;
+    const sec = Math.min(offlineSec, OFFLINE.maxSeconds);
+    const amount = Math.round(sec * s.autoRate * OFFLINE.factor);
+    // XP: makinelerin/kamyonların oyun açıkken kazandırdığı hız × xpFactor; seviyenin belli bir oranını geçmez
+    let xp = sec * (s.autoXpRate || 0) * OFFLINE.xpFactor;
+    const mul = xpGainMul(s.level) || 1;
+    const cap = (xpForLevel(s.level) * OFFLINE.xpMaxLevelFrac) / mul; // addXP içinde ×mul uygulanır
+    xp = Math.round(Math.min(xp, cap));
+    return amount > 0 || xp > 0 ? { amount, sec, xp } : null;
+  }
+  /** Arka plandan dönüş: oyun kapatılmadan (Android'de ana ekrana dönüp gelmek, tarayıcıda sekme değiştirmek)
+   *  geri gelindiğinde de "Sen yokken" kazancı verilir. Önceden yalnızca oyun tamamen kapatılıp açılınca veriliyordu. */
+  watchResume() {
+    const g = this.game;
+    let hiddenAt = 0;
+    const hide = () => { if (!hiddenAt) hiddenAt = Date.now(); };
+    const show = () => {
+      if (!hiddenAt) return;
+      const sec = (Date.now() - hiddenAt) / 1000; hiddenAt = 0;
+      const off = this.offlineCalc(sec);
+      if (!off) return;
+      const open = () => { if (document.hidden) return; if ($('#modal-root')?.children.length) { setTimeout(open, 1500); return; } this.offline(off.amount, off.sec, off.xp); };
+      setTimeout(open, 400);
+    };
+    document.addEventListener('visibilitychange', () => (document.hidden ? hide() : show()));
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('appStateChange', ({ isActive }) => (isActive ? show() : hide()));
+    }).catch(() => {});
   }
   welcome() {
     return this.modal(`<div class="welcome">

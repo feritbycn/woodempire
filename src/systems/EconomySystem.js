@@ -92,11 +92,16 @@ export class EconomySystem {
   update(dt) {
     this.sessionTime += dt;
     this.s.playTime += dt;
-    if (this.sessionTime > 60) {
-      const rate = this.sessionAuto / this.sessionTime;
-      this.s.autoRate = this.s.autoRate * 0.6 + rate * 0.4;
-      this.s.autoXpRate = (this.s.autoXpRate || 0) * 0.6 + ((this.sessionXp || 0) / this.sessionTime) * 0.4;
-      this.sessionAuto = 0; this.sessionTime = 0; this.sessionXp = 0;
-    }
+    if (this.sessionTime > 60) this.flushRates();
+  }
+  /** Otomasyon hızlarını (para/sn, XP/sn) güncelle. Oyun arka plana alınırken de çağrılır;
+   *  kısa oturumlar süresi oranında etki eder (önceden 60 sn dolmadan kapatılınca hız hiç oluşmuyordu). */
+  flushRates() {
+    const t = this.sessionTime;
+    if (t < 10) return;
+    const w = 0.4 * Math.min(1, t / 60);
+    this.s.autoRate = this.s.autoRate * (1 - w) + (this.sessionAuto / t) * w;
+    this.s.autoXpRate = (this.s.autoXpRate || 0) * (1 - w) + ((this.sessionXp || 0) / t) * w;
+    this.sessionAuto = 0; this.sessionTime = 0; this.sessionXp = 0;
   }
 }

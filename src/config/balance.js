@@ -208,7 +208,9 @@ export const SPRINT = { mul: 1.75, dur: 4, cooldown: 10 };
 export const MAGNET = { radius: 9, dur: 2.5, cooldown: 12 };
 
 /** Offline kazanç */
-export const OFFLINE = { maxSeconds: 2 * 3600, factor: 0.5 };
+// xpFactor: kapalıyken XP, açıkken kazanılan hızın bu oranı (eskiden 0.5 → %35 düşürüldü).
+// xpMaxLevelFrac: kapalıyken XP (2 katı alınsa bile) mevcut seviyenin en fazla bu oranı kadar → bir anda seviye atlatmaz.
+export const OFFLINE = { maxSeconds: 2 * 3600, factor: 0.5, xpFactor: 0.325, xpMaxLevelFrac: 0.45 };
 
 export function upgradeCost(def, level) {
   return Math.round(def.base * Math.pow(def.growth, level));
