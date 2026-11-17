@@ -483,6 +483,7 @@ export class UI {
   /** Uzakta geçen süreye göre kazanç. Hem oyun kapatılıp açılınca hem de arka plandan dönünce kullanılır. */
   offlineCalc(offlineSec) {
     const g = this.game, s = g.state;
+    if (g.cloud?.banActive?.(s.ban)) return null; // askıdaki hesap kazanç almaz
     if (!(offlineSec > 120) || !(s.autoRate > 0.05 || s.autoXpRate > 0.001)) return null;
     const sec = Math.min(offlineSec, OFFLINE.maxSeconds);
     const amount = Math.round(sec * s.autoRate * OFFLINE.factor);

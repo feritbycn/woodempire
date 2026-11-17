@@ -58,6 +58,13 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
   .del-steps{font-size:13px;margin-top:10px;min-height:18px}
   #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,40px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;transition:.25s;z-index:99;pointer-events:none;max-width:calc(100% - 32px)}
   #toast.show{transform:translate(-50%,0);opacity:1}
+  .ban-box{border-radius:12px;padding:10px 12px;margin-top:8px;background:color-mix(in srgb,var(--red) 10%,var(--card));border:1px solid color-mix(in srgb,var(--red) 35%,transparent)}
+  .tag.ban{background:var(--red);color:#fff}
+  .dur{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.dur button{background:var(--chip);color:var(--ink);padding:7px 11px}.dur button.on{background:var(--red);color:#fff}
+  #dlg-ask{max-width:420px;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+  #dlg-ask[open]{animation:delIn .22s cubic-bezier(.2,.9,.3,1.2)}
+  #dlg-ask .del-head.green{background:linear-gradient(135deg,#43a047,#2e7d32)}#dlg-ask .del-head.amber{background:linear-gradient(135deg,#fb8c00,#c62828)}
+  #ask-ok.green{background:var(--green2)}#ask-ok.red{background:var(--red)}
 </style>
 </head>
 <body>
@@ -137,6 +144,19 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <p id="x-msg"></p>
   </details>
 
+  <details id="dp-ban" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">⛔ Hesabı askıya al</summary>
+    <div id="ban-state"></div>
+    <div id="ban-form">
+      <label style="margin-top:10px">Süre</label>
+      <div class="dur" id="ban-dur">
+        <button data-h="1">1 saat</button><button data-h="24" class="on">1 gün</button><button data-h="72">3 gün</button><button data-h="168">7 gün</button><button data-h="720">30 gün</button><button data-h="0">Süresiz</button>
+      </div>
+      <label>Sebep (oyuncuya gösterilir)</label><input id="ban-reason" maxlength="200" placeholder="ör. Hile kullanımı tespit edildi">
+      <p class="muted" style="margin:8px 0 0">Askıdaki oyuncu oyunu açınca kapatılamayan bir uyarı görür ve oynayamaz; kapalıyken kazanç da almaz. Süre dolunca ya da askıyı kaldırınca oyun kendiliğinden açılır (oyun açıksa anında).</p>
+      <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button class="danger" id="ban-go">⛔ Askıya al</button></div></div>
+    </div>
+    <p id="ban-msg"></p>
+  </details>
   <div class="danger-zone" id="dp-danger">
     <div><b>⚠️ Tehlikeli bölge</b><p>Hesabı ve tüm bulut verilerini kalıcı olarak siler.</p></div>
     <button class="danger" id="dp-del">🗑️ Hesabı sil</button>
@@ -159,12 +179,16 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <div class="del-btns"><button class="ghost" id="del-cancel">Vazgeç</button><button id="del-go" disabled>Kalıcı olarak sil</button></div>
   </div>
 </dialog>
+<dialog id="dlg-ask">
+  <div class="del-head" id="ask-head"><div class="del-ico" id="ask-ico">⛔</div><h2 id="ask-title"></h2><p id="ask-sub"></p></div>
+  <div class="del-body"><div id="ask-body"></div><div class="del-btns"><button class="ghost" id="ask-no">Vazgeç</button><button id="ask-ok"></button></div></div>
+</dialog>
 <div id="toast"></div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, getDocs, query, orderBy, limit, where, addDoc, deleteDoc, serverTimestamp, writeBatch, Timestamp, getCountFromServer } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, getDocs, query, orderBy, limit, where, addDoc, deleteDoc, setDoc, serverTimestamp, writeBatch, Timestamp, getCountFromServer } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: 'AIzaSyCvPap7oTyQtS4WkSU4Ugd5l5gA_4smQEE', authDomain: 'woodempire-37573.firebaseapp.com', projectId: 'woodempire-37573',
@@ -191,6 +215,9 @@ const dt = (t) => { const m = ms(t); return m ? new Date(m).toLocaleString('tr-T
 const hrs = (s) => { s = Number(s) || 0; return s < 3600 ? Math.round(s / 60) + ' dk' : (s / 3600).toFixed(1).replace('.', ',') + ' sa'; };
 const pname = (p) => p.name || `Oyuncu #${p.id.slice(0, 6).toUpperCase()}`;
 
+let bans = new Map();
+const banOf = (id) => { const b = bans.get(id); if (!b) return null; const u = b.until ? ms(b.until) : null; return !u || u > Date.now() ? { ...b, untilMs: u } : null; };
+const leftTxt = (u) => { const m = Math.max(0, u - Date.now()) / 6e4; return m < 60 ? Math.ceil(m) + ' dk' : m < 1440 ? Math.round(m / 60) + ' sa' : Math.round(m / 1440) + ' gün'; };
 let players = [], sortKey = 'lastSeen', sortDir = -1, current = null;
 
 $('#btn-login').onclick = async () => {
@@ -221,6 +248,7 @@ async function loadAll() {
       getCountFromServer(query(col, where('nameLower', '!=', null))), getDocs(query(col, orderBy('lastSeen', 'desc'), limit(1000))),
     ]);
     players = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    try { const bs = await getDocs(collection(db, 'bans')); bans = new Map(bs.docs.map((d) => [d.id, d.data()])); } catch { bans = new Map(); }
     const avgLv = players.length ? players.reduce((a, p) => a + (p.level || 1), 0) / players.length : 0;
     const gold = players.reduce((a, p) => a + (p.gold || 0), 0);
     const st = [['Toplam oyuncu', nf.format(total.data().count)], ['Son 24 saat aktif', nf.format(d1.data().count)], ['Son 7 gün aktif', nf.format(d7.data().count)],
@@ -236,7 +264,7 @@ function renderPlayers() {
   const val = (p) => sortKey === 'name' ? pname(p).toLocaleLowerCase('tr-TR') : (sortKey === 'lastSeen' || sortKey === 'createdAt') ? ms(p[sortKey]) : (p[sortKey] || 0);
   list.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * sortDir);
   $('#list-info').textContent = `${list.length} oyuncu gösteriliyor${players.length >= 1000 ? ' (en son görülen 1000 oyuncu)' : ''}`;
-  $('#rows').innerHTML = list.slice(0, 500).map((p) => `<tr class="p" data-id="${p.id}"><td><b>${esc(pname(p))}</b> ${p.noAds || p.premium ? '<span class="tag on">Premium</span>' : ''} <span class="tag">${esc(p.platform || '')}</span></td>
+  $('#rows').innerHTML = list.slice(0, 500).map((p) => `<tr class="p" data-id="${p.id}"><td><b>${esc(pname(p))}</b> ${banOf(p.id) ? '<span class="tag ban">⛔ Askıda</span> ' : ''}${p.noAds || p.premium ? '<span class="tag on">Premium</span>' : ''} <span class="tag">${esc(p.platform || '')}</span></td>
     <td class="num">${p.level || 1}</td><td class="num">${big(p.money)}</td><td class="num">${big(p.gold)}</td><td class="num">${p.zones || 1}</td><td class="num">${p.workers || 0}</td>
     <td class="num">${hrs(p.playTime)}</td><td>${ago(p.lastSeen)}</td><td>${dt(p.createdAt)}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">Oyuncu yok</td></tr>';
 }
@@ -273,6 +301,7 @@ function openPlayer(p) {
   if (p) { for (const k of ['level', 'xp', 'gold', 'money', 'speed']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : k === 'speed' ? (p.speed == null ? '?' : p.speed + 1) : big(p[k])); } $('#s-msg').value = ''; }
   amtPreview();
   $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false; $('#dp-danger').classList.toggle('hide', !p);
+  $('#dp-ban').classList.toggle('hide', !p); if (p) { $('#dp-ban').open = !!banOf(p.id); banRender(p); }
   if (p) xferInit(p);
   $('#dp-rename').classList.toggle('hide', !p); $('#dp-rename').open = false;
   if (p) { $('#r-cur').textContent = p.name || '(yok)'; $('#r-name').value = ''; $('#r-msg').textContent = ''; }
@@ -335,6 +364,57 @@ $('#r-go').onclick = async () => {
     $('#r-msg').innerHTML = '<span class="ok">Ad değiştirildi. Oyun açıksa hemen, kapalıysa açınca görünür.</span>';
   } catch (e) { $('#r-msg').innerHTML = `<span class="err">Değiştirilemedi: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
   $('#r-go').disabled = false;
+};
+
+// ---------- MODERN ONAY PENCERESİ ----------
+function ask({ icon, title, sub = '', body = '', ok, tone = 'red' }) {
+  $('#ask-ico').textContent = icon; $('#ask-title').textContent = title; $('#ask-sub').innerHTML = sub; $('#ask-body').innerHTML = body;
+  $('#ask-head').className = 'del-head' + (tone === 'green' ? ' green' : tone === 'amber' ? ' amber' : '');
+  $('#ask-ok').textContent = ok; $('#ask-ok').className = tone === 'green' ? 'green' : 'red';
+  const d = $('#dlg-ask'); d.showModal();
+  return new Promise((res) => {
+    const done = (v) => { d.close(); $('#ask-ok').onclick = $('#ask-no').onclick = null; d.oncancel = null; res(v); };
+    $('#ask-ok').onclick = () => done(true); $('#ask-no').onclick = () => done(false); d.oncancel = (e) => { e.preventDefault(); done(false); };
+  });
+}
+
+// ---------- ASKIYA ALMA ----------
+let banHours = 24;
+const durTxt = (h) => !h ? 'Süresiz' : h < 24 ? `${h} saat` : `${h / 24} gün`;
+function banRender(p) {
+  const b = banOf(p.id);
+  $('#ban-msg').textContent = '';
+  $('#ban-state').innerHTML = b ? `<div class="ban-box"><b>⛔ Askıda</b> · ${b.untilMs ? `bitiş <b>${new Date(b.untilMs).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}</b> (${leftTxt(b.untilMs)} kaldı)` : '<b>süresiz</b>'}
+      ${b.reason ? `<br>Sebep: ${esc(b.reason)}` : ''}<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button id="ban-lift">✅ Askıyı kaldır</button><span class="muted" style="align-self:center">veya aşağıdan yeni süre vererek değiştir</span></div></div>`
+    : '<p class="muted" style="margin:8px 0 0">Bu hesap şu an askıda değil.</p>';
+  $('#ban-go').textContent = b ? '⛔ Askıyı güncelle' : '⛔ Askıya al';
+  $('#ban-reason').value = b?.reason || '';
+  const lift = $('#ban-lift');
+  if (lift) lift.onclick = async () => {
+    if (!(await ask({ icon: '✅', title: 'Askı kaldırılsın mı?', sub: esc(pname(p)), body: '<p style="margin:0">Oyuncu hemen oynamaya devam edebilir. Oyun açıksa uyarı anında kapanır.</p>', ok: 'Askıyı kaldır', tone: 'green' }))) return;
+    try { await deleteDoc(doc(db, 'bans', p.id)); bans.delete(p.id); banRender(p); renderPlayers(); toast(`✅ ${pname(p)} askıdan çıkarıldı`); }
+    catch (e) { $('#ban-msg').innerHTML = `<span class="err">Kaldırılamadı: ${esc(e.code || e.message)}</span>`; }
+  };
+}
+$('#ban-dur').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; banHours = +b.dataset.h; $('#ban-dur').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); };
+$('#ban-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const reason = $('#ban-reason').value.trim().slice(0, 200);
+  const until = banHours ? Date.now() + banHours * 36e5 : null;
+  const ok = await ask({ icon: '⛔', title: 'Hesap askıya alınsın mı?', tone: 'amber', ok: 'Askıya al',
+    sub: `${esc(pname(p))} · Seviye ${p.level ?? '?'}`,
+    body: `<ul class="del-list" style="margin-top:0"><li>Oyuncu oyunu oynayamaz (açıksa anında kilitlenir)</li><li>Kapalıyken kazanç almaz</li></ul>
+      <div class="ban-box">Süre: <b>${durTxt(banHours)}</b>${until ? ` — bitiş ${new Date(until).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}<br>Sebep: ${reason ? esc(reason) : '<span class="muted">(yazılmadı)</span>'}</div>
+      <p class="muted" style="margin:8px 0 0">İlerlemesi silinmez; askı bitince kaldığı yerden devam eder.</p>` });
+  if (!ok) return;
+  $('#ban-go').disabled = true;
+  try {
+    const data = { reason, until: until ? Timestamp.fromMillis(until) : null, name: pname(p), at: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid };
+    await setDoc(doc(db, 'bans', p.id), data);
+    bans.set(p.id, data);
+    banRender(p); renderPlayers(); toast(`⛔ ${pname(p)} ${durTxt(banHours).toLocaleLowerCase('tr-TR')} askıya alındı`);
+  } catch (e) { $('#ban-msg').innerHTML = `<span class="err">Askıya alınamadı: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
+  $('#ban-go').disabled = false;
 };
 
 // ---------- HESAP SİLME ----------

@@ -32,6 +32,8 @@ export class CloudSystem {
   }
 
   async init() {
+    // Askı yerelde de saklanır: internet yokken de oyun kilitli kalır (süre dolunca kendiliğinden açılır)
+    if (this.banActive(this.game.state.ban)) setTimeout(() => this.showBan(), 600);
     if (!this.enabled()) return;
     this.status = 'loading';
     try {
@@ -53,6 +55,8 @@ export class CloudSystem {
       setTimeout(() => this.maybeAskName(), 2500); // seviyesi yetmiş ama adı olmayan eski oyunculara da hemen sorulur
       setTimeout(() => this.checkGifts(), 6000);
       // kişiye özel hediye ve düzenlemeler ANINDA gelir (oyun açıkken); herkese olanlar 5 dakikada bir kontrol edilir
+      // askıya alma: yönetici bans/{uid} yazınca/silince anında uygulanır
+      try { F.onSnapshot(F.doc(this.db, 'bans', this.uid), (snap) => this.applyBan(snap.exists() ? snap.data() : null), () => {}); } catch {}
       try { F.onSnapshot(F.query(F.collection(this.db, 'gifts'), F.where('to', '==', this.uid)), (snap) => { if (!snap.metadata?.hasPendingWrites && snap.docChanges().some((c) => c.type === 'added')) this.checkGifts(); }, () => {}); } catch {}
     } catch (e) {
       console.warn('[Bulut] kullanılamıyor', e);
@@ -62,6 +66,7 @@ export class CloudSystem {
   }
 
   update(dt) {
+    if (this.game.state.ban) { this.banT = (this.banT || 0) - dt; if (this.banT <= 0) { this.banT = 5; if (!this.banActive(this.game.state.ban)) this.applyBan(null); } }
     if (this.status !== 'ok') return;
     this.syncT -= dt; this.giftT -= dt;
     if (this.syncT <= 0) { this.syncT = CLOUD.syncEvery; this.sync(); }
@@ -169,6 +174,7 @@ export class CloudSystem {
    *  Bulut bağlantısı yoksa ad benzersizliği denetlenemeyeceği için oyun engellenmez; bağlantı gelince sorulur. */
   needsName() { const g = this.game; return this.status === 'ok' && !g.state.cloud?.name && g.state.level >= CLOUD.nameLevel; }
   maybeAskName(force = false) {
+    if (this.banActive(this.game.state.ban)) return;
     const g = this.game;
     if (this.status !== 'ok' || g.state.cloud?.name) return;
     if (!force && g.state.level < CLOUD.nameLevel) return;
@@ -252,6 +258,57 @@ export class CloudSystem {
    *  Önce "alındı" kaydı yazılır → aynı düzenleme ikinci kez uygulanmaz. */
   /** Yönetici kullanıcı adını değiştirdi (veya hesap aktarımında ad başka hesaba geçti → ad boşalır, yenisi sorulur). */
   /** Yönetici hesap aktarımından önce en güncel kaydı istedi: hemen yedekle (oyuncuya bir şey gösterilmez). */
+  // ---------- ASKIYA ALMA ----------
+  banActive(b) { return !!b && (!b.until || b.until > Date.now()); }
+  /** Buluttaki askı kaydını uygula (null → askı yok / kaldırıldı). */
+  applyBan(d) {
+    const g = this.game, s = g.state;
+    const until = d?.until?.toMillis ? d.until.toMillis() : (typeof d?.until === 'number' ? d.until : null);
+    const ban = d ? { reason: String(d.reason || '').slice(0, 200), until, at: Date.now() } : null;
+    if (ban && this.banActive(ban)) {
+      const changed = JSON.stringify(s.ban) !== JSON.stringify({ ...ban, at: s.ban?.at });
+      s.ban = ban; g.save.requestSave(true);
+      if (changed || !this.banModal) this.showBan();
+    } else if (s.ban) {
+      s.ban = null; g.save.requestSave(true);
+      this.hideBan();
+      g.bus.emit('toast', { text: 'Hesabının askısı kaldırıldı, iyi oyunlar!', type: 'success' });
+    }
+  }
+  showBan() {
+    const g = this.game, b = g.state.ban; if (!b) return;
+    this.hideBan(true);
+    g.paused = true;
+    const m = g.ui.modal(`<div class="giftbox banbox"><div class="gift-ic">⛔</div><h2>Hesabın askıya alındı</h2>
+      ${b.reason ? `<p class="gift-msg">${escHtml(b.reason)}</p>` : ''}
+      <p class="ban-until" id="ban-until"></p>
+      <p class="muted">Bir yanlışlık olduğunu düşünüyorsan destek ile iletişime geç ve şu kimliği bildir:<br><b>${escHtml(this.uid ? this.shortId() : '')}</b></p></div>`, { sticky: true });
+    m.close = () => {};
+    this.banModal = m;
+    const tick = () => {
+      const el = m.querySelector('#ban-until'); if (!el) return;
+      const b2 = g.state.ban; if (!b2) return;
+      if (!b2.until) { el.innerHTML = '<b>Süresiz</b> askı'; return; }
+      const left = Math.max(0, b2.until - Date.now()), h = Math.floor(left / 36e5), mn = Math.ceil((left % 36e5) / 6e4);
+      el.innerHTML = `Bitiş: <b>${new Date(b2.until).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}</b><br>${h >= 24 ? `${Math.floor(h / 24)} gün ${h % 24} sa` : h ? `${h} sa ${mn} dk` : `${mn} dk`} kaldı`;
+    };
+    // oyun duraklatıldığı için kendi zamanlayıcısı: geri sayım, süre dolunca açma ve uyarının hep en üstte kalması
+    let n = 0;
+    clearInterval(this.banTick);
+    this.banTick = setInterval(() => {
+      if (!this.banActive(g.state.ban)) { this.applyBan(null); return; }
+      if (m.parentNode && m.parentNode.lastElementChild !== m) m.parentNode.appendChild(m);
+      g.paused = true;
+      if (++n % 15 === 0) tick();
+    }, 1000);
+    tick();
+  }
+  hideBan(keepPaused) {
+    clearInterval(this.banTick);
+    if (this.banModal) { const el = this.banModal.closest?.('.modal-wrap') || this.banModal; el.remove?.(); this.banModal = null; }
+    if (!keepPaused) this.game.paused = false;
+  }
+
   /** Yönetici hesabı sildi ve cihazdaki oyunun da sıfırlanmasını istedi: kayıt silinir, oyun baştan başlar. */
   async applyWipe(id) {
     const F = this.F; const g = this.game;

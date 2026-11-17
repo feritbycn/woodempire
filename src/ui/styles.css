@@ -403,3 +403,4 @@ label.set.autoassign input:checked::after { transform: translateX(22px); }
 .gift-items { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 14px; }
 .gift-items .gl { background: #fff3d6; border-radius: 10px; padding: 8px; font-size: 17px; }
 .set-info.cloud-info b { color: #2f6b2a; }
+.banbox .ban-until{font-size:15px;margin:10px 0;line-height:1.5}.banbox h2{color:#c62828}
