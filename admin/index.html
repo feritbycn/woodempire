@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Wood Empire Yönetim</title>
+<style>
+:root{--bg:#f4efe6;--card:#fffdf8;--ink:#33251a;--muted:#7a6250;--line:#e6dccb;--green:#2f6b2a;--green2:#43a047;--red:#c62828;--gold:#c98a00;--chip:#efe6d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17130f;--card:#221c16;--ink:#f1e7d8;--muted:#b9a58d;--line:#3a3027;--green:#7bc46f;--green2:#5fae55;--red:#ef6b6b;--gold:#e7b53c;--chip:#2e261e}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0;color:var(--green)}header .who{font-size:13px;color:var(--muted);text-align:right}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}.stat b{display:block;font-size:24px;line-height:1.2;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--muted)}
+button,.btn{font:inherit;border:0;border-radius:10px;padding:9px 14px;background:var(--green2);color:#fff;font-weight:700;cursor:pointer}button.ghost{background:var(--chip);color:var(--ink)}button.danger{background:var(--red)}button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1 1 140px}
+.tbl-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-size:12px;color:var(--muted);font-weight:600;cursor:pointer;user-select:none}
+tr.p{cursor:pointer}tr.p:hover{background:var(--chip)}td.num{text-align:right}th.num{text-align:right}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--muted)}.tag.on{background:var(--green2);color:#fff}
+.muted{color:var(--muted);font-size:13px}.err{color:var(--red);font-weight:600}.ok{color:var(--green);font-weight:600}
+dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 24px);background:var(--card);color:var(--ink)}dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:16px 18px}.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:10px 0}.kv span{color:var(--muted)}
+.center{max-width:460px;margin:60px auto;text-align:center}code{background:var(--chip);padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button{background:var(--chip);color:var(--ink)}.tabs button.on{background:var(--green2);color:#fff}
+.hide{display:none!important}
+  .amt-hint{font-size:12px;min-height:16px;margin-top:2px}
+  .addgrid{display:grid;grid-template-columns:auto auto 1fr;gap:4px 12px;align-items:start}
+  .addgrid .ah{font-size:12px;opacity:.7;font-weight:700}
+  .addgrid .an,.addgrid .ac{padding-top:9px;white-space:nowrap}
+  .addgrid .ac b{font-size:16px}
+  /* --- Tehlikeli bölge + silme penceresi --- */
+  .danger-zone{margin-top:18px;border:1.5px solid color-mix(in srgb,var(--red) 45%,transparent);border-radius:14px;padding:12px 14px;background:color-mix(in srgb,var(--red) 6%,var(--card));display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .danger-zone b{color:var(--red)}.danger-zone p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+  #dlg-del{max-width:440px;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+  #dlg-del[open]{animation:delIn .22s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes delIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+  .del-head{background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;padding:22px 20px 18px;text-align:center}
+  .del-ico{width:58px;height:58px;margin:0 auto 8px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:30px;box-shadow:0 0 0 8px rgba(255,255,255,.08)}
+  .del-head h2{margin:0;font-size:20px}.del-head p{margin:4px 0 0;font-size:13px;opacity:.9}
+  .del-body{padding:16px 20px 20px}
+  .del-who{display:flex;gap:12px;align-items:center;background:var(--chip);border-radius:12px;padding:10px 12px}
+  .del-av{width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;flex:0 0 auto}
+  .del-who .n{font-weight:800}.del-who .m{font-size:12px;color:var(--muted)}
+  .del-list{list-style:none;padding:0;margin:12px 0;font-size:14px}.del-list li{padding:4px 0 4px 26px;position:relative}
+  .del-list li::before{content:'✕';position:absolute;left:4px;color:var(--red);font-weight:800}
+  .del-opt{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb,var(--gold) 12%,var(--card));border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);border-radius:12px;padding:10px 12px;font-size:13px;cursor:pointer}
+  .del-opt input{width:auto;margin-top:2px;accent-color:var(--red)}
+  .del-warn{margin:12px 0 6px;font-size:13px;font-weight:700;color:var(--red)}
+  #del-confirm{font-weight:700;letter-spacing:.3px}#del-confirm.match{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 20%,transparent)}
+  .del-btns{display:flex;gap:10px;margin-top:14px}.del-btns button{flex:1;padding:12px}
+  #del-go{background:var(--red);transition:transform .1s}#del-go:not(:disabled):active{transform:scale(.97)}
+  .del-steps{font-size:13px;margin-top:10px;min-height:18px}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,40px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;transition:.25s;z-index:99;pointer-events:none;max-width:calc(100% - 32px)}
+  #toast.show{transform:translate(-50%,0);opacity:1}
+  .ban-box{border-radius:12px;padding:10px 12px;margin-top:8px;background:color-mix(in srgb,var(--red) 10%,var(--card));border:1px solid color-mix(in srgb,var(--red) 35%,transparent)}
+  .tag.ban{background:var(--red);color:#fff}
+  .dur{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.dur button{background:var(--chip);color:var(--ink);padding:7px 11px}.dur button.on{background:var(--red);color:#fff}
+  #dlg-ask{max-width:420px;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+  #dlg-ask[open]{animation:delIn .22s cubic-bezier(.2,.9,.3,1.2)}
+  #dlg-ask .del-head.green{background:linear-gradient(135deg,#43a047,#2e7d32)}#dlg-ask .del-head.amber{background:linear-gradient(135deg,#fb8c00,#c62828)}
+  #ask-ok.green{background:var(--green2)}#ask-ok.red{background:var(--red)}
+  .bk{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 0;flex-wrap:wrap}
+  .bk .t{font-size:14px}.bk .t small{display:block;color:var(--muted);font-size:12px}.bk .b{display:flex;gap:6px}.bk button{padding:7px 10px;font-size:13px}
+  .bk .why{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:4px}
+</style>
+</head>
+<body>
+<header><h1>🌲 Wood Empire · Yönetim</h1><div class="who" id="who"></div></header>
+<main>
+  <!-- Giriş -->
+  <section id="v-login" class="center hide">
+    <div class="card"><h2>Yönetici girişi</h2><p class="muted">Bu sayfayı yalnızca yönetici olarak eklenen Google hesabı kullanabilir.</p>
+      <button id="btn-login">Google ile giriş yap</button><p id="login-msg" class="muted"></p></div>
+  </section>
+  <!-- Yetki yok -->
+  <section id="v-noadmin" class="center hide">
+    <div class="card"><h2>Bu hesap henüz yönetici değil</h2>
+      <p>Firebase konsolu → <b>Firestore Database</b> → <b>Start collection</b> → koleksiyon kimliği <code>admins</code> → belge kimliği olarak aşağıdaki UID'yi yapıştırın, bir alan ekleyin (ör. <code>ok</code> = true) ve kaydedin. Sonra bu sayfayı yenileyin.</p>
+      <p>Senin UID'n:<br><code id="my-uid"></code> <button class="ghost" id="copy-uid">Kopyala</button></p>
+      <button class="ghost" id="btn-logout2">Çıkış yap</button></div>
+  </section>
+  <!-- Panel -->
+  <section id="v-panel" class="hide">
+    <div class="stats" id="stats"></div>
+    <div class="tabs"><button class="on" data-tab="players">Oyuncular</button><button data-tab="gifts">Hediyeler</button></div>
+
+    <div id="t-players">
+      <div class="card">
+        <div class="row">
+          <div><label>Ara (kullanıcı adı veya kimlik)</label><input id="q" placeholder="ör. kereste veya A3F9C1"></div>
+          <div style="flex:0 0 auto"><button class="ghost" id="reload">Yenile</button></div>
+          <div style="flex:0 0 auto"><button id="gift-all">Herkese hediye</button></div>
+        </div>
+        <p class="muted" id="list-info"></p>
+        <div class="tbl-wrap"><table><thead><tr>
+          <th data-s="name">Oyuncu</th><th data-s="level" class="num">Seviye</th><th data-s="money" class="num">Para</th><th data-s="gold" class="num">Altın</th>
+          <th data-s="zones" class="num">Alan</th><th data-s="workers" class="num">İşçi</th><th data-s="playTime" class="num">Oynama</th><th data-s="lastSeen">Son görülme</th><th data-s="createdAt">Katılma</th>
+        </tr></thead><tbody id="rows"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="t-gifts" class="hide">
+      <div class="card"><h3 style="margin-top:0">Gönderilen hediyeler ve düzenlemeler</h3><p class="muted">Bekleyen bir hediyeyi silersen henüz almamış oyuncular artık göremez.</p>
+        <div class="tbl-wrap"><table><thead><tr><th>Tarih</th><th>Alıcı</th><th>İçerik</th><th>Mesaj</th><th></th></tr></thead><tbody id="gift-rows"></tbody></table></div></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg-player"><div class="dlg">
+  <h2 id="dp-title" style="margin:0"></h2><div class="muted" id="dp-sub"></div>
+  <div class="kv" id="dp-kv"></div>
+  <h3 id="dp-add-title">Ekle (mevcut değerin üstüne)</h3>
+  <div id="dp-form"></div>
+  <div class="row" style="margin-top:12px"><button class="ghost" id="dp-close">Kapat</button><button id="dp-send">Ekle ve gönder</button></div>
+  <p id="dp-msg"></p>
+  <details id="dp-set-wrap" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">Değeri doğrudan değiştir (ekleme değil, gelişmiş)</summary>
+    <h3>Değerleri düzenle</h3>
+    <p class="muted" style="margin-top:-6px">Girdiğin değer oyuncunun hesabındaki değerin <b>yerine geçer</b>. Boş bırakılan alan değişmez. Oyun açıksa hemen, kapalıysa açınca uygulanır.</p>
+    <div class="row"><div><label>Seviye</label><input type="number" min="1" id="s-level"></div><div><label>XP (seviye içi)</label><input type="number" min="0" id="s-xp"></div></div>
+    <div class="row" style="margin-top:8px"><div><label>Hareket hızı (Sv.1–16)</label><input type="number" min="1" max="16" id="s-speed"></div><div></div></div>
+    <div class="row" style="margin-top:8px"><div><label>Altın</label><input type="text" autocomplete="off" id="s-gold" data-amt></div><div><label>Para</label><input type="text" autocomplete="off" id="s-money" data-amt></div></div>
+    <p class="muted" style="margin:6px 0 0">Kısaltma yazabilirsin: <b>400B</b>, <b>1,5T</b>, <b>359AB</b>, <b>400A</b> (=400AA). Birimler: K=bin, M=milyon, B=milyar, T, Q, AA, AB … (her biri ×1000)</p>
+    <div style="margin-top:8px"><label>Not (isteğe bağlı, oyuncuya gösterilir)</label><input id="s-msg" maxlength="140" placeholder="ör. Destek talebin çözüldü"></div>
+    <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="dp-set">Değerleri kaydet</button></div></div>
+    <p id="dp-set-msg"></p>
+  </details>
+  <details id="dp-rename" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">✏️ Kullanıcı adını değiştir</summary>
+    <p class="muted" style="margin-top:8px">Şu anki ad: <b id="r-cur"></b>. Yeni ad 3–16 karakter; harf, rakam ve _ olabilir. Başka oyuncunun adı verilemez. Eski ad serbest kalır.</p>
+    <div class="row"><div><input id="r-name" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="yeni kullanıcı adı"></div><div style="flex:0 0 auto"><button id="r-go">Adı değiştir</button></div></div>
+    <p id="r-msg"></p>
+  </details>
+  <details id="dp-xfer" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">🔄 Hesap aktarımı (bu hesabın verilerini başka hesaba taşı)</summary>
+    <p class="muted" id="x-backup" style="margin-top:8px"></p>
+    <label>Hedef hesap (kullanıcı adı veya kimlik)</label>
+    <input id="x-to" autocomplete="off" list="x-list" placeholder="ör. Ali_123 veya Oyuncu #AB12CD veya tam kimlik"><datalist id="x-list"></datalist>
+    <div id="x-target" style="margin-top:8px"></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-weight:600"><input type="checkbox" id="x-name" checked style="width:auto;margin-top:3px"><span id="x-name-lbl">Kullanıcı adını da taşı</span></label>
+    <div style="margin-top:8px"><label>Not (isteğe bağlı, hedef oyuncuya gösterilir)</label><input id="x-msg-in" maxlength="140" placeholder="ör. Eski telefonundaki hesabın taşındı"></div>
+    <p class="muted" style="margin:8px 0 0">Kaynak hesabın tüm oyun ilerlemesi (seviye, para, altın, alanlar, işçiler, makineler…) hedef hesaba <b>kopyalanır</b>. Hedef hesabın kendi ilerlemesi <b>silinir</b>. <b>"Kullanıcı adını da taşı"</b> seçiliyse kaynağın adı hedefe geçer (hedefin eski adı serbest kalır, kaynak hesap adsız kalır ve oyunu açınca yeni ad seçer); seçili değilse herkes kendi adını korur. Hedef oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır ve oyun yeniden başlar.<br><b>En doğru sonuç için:</b> aktarırken <b>kaynak hesapla oyun açık</b> olsun — panel önce oradan o anki kaydı alır. Aktarımdan sonra kaynak hesapla oynamaya devam edilirse o ilerleme hedefe geçmez.</p>
+    <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button id="x-go" class="danger">Aktar</button></div></div>
+    <p id="x-msg"></p>
+  </details>
+
+  <details id="dp-reset" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">♻️ İlerlemeyi sıfırla (yedekli)</summary>
+    <div class="dur" id="rs-mode" style="margin-top:10px"><button data-m="full" class="on">Tamamen sıfırla</button><button data-m="values">Seviye / para düşür</button></div>
+    <p class="muted" id="rs-full-info" style="margin:0">Oyun <b>en baştan</b> başlar: alanlar, işçiler, makineler, para, altın, seviye… hepsi sıfırlanır. Hesap ve kullanıcı adı kalır.</p>
+    <div id="rs-values" class="hide">
+      <div class="row"><div><label>Yeni seviye</label><input type="number" min="1" id="rs-level" placeholder="ör. 10"></div><div></div></div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:14px">
+        <label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="rs-money" style="width:auto"> Parayı sıfırla</label>
+        <label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="rs-gold" style="width:auto"> Altını sıfırla</label>
+        <label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="rs-xp" checked style="width:auto"> XP'yi sıfırla</label>
+      </div>
+      <p class="muted" style="margin:6px 0 0">Alanlar, işçiler ve makineler olduğu gibi kalır; yalnızca seçtiğin değerler değişir.</p>
+    </div>
+    <div style="margin-top:8px"><label>Sebep / not (oyuncuya gösterilir)</label><input id="rs-note" maxlength="140" placeholder="ör. Hatalı kazanç düzeltildi"></div>
+    <p class="muted" style="margin:8px 0 0">💾 Sıfırlamadan önce oyuncunun <b>o anki tüm verisi yedeklenir</b>. Aşağıdaki <b>Yedekler</b> bölümünden istediğin zaman geri yükleyebilirsin.</p>
+    <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button class="danger" id="rs-go">♻️ Yedekle ve sıfırla</button></div></div>
+    <p id="rs-out"></p>
+  </details>
+  <details id="dp-backups" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">🗂️ Yedekler <span class="tag" id="bk-count">…</span></summary>
+    <div id="bk-list" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:6px"><div class="muted">Sıfırlama, aktarım, silme ve geri yükleme öncesinde otomatik yedek alınır.</div><div style="flex:0 0 auto"><button class="ghost" id="bk-now">📸 Şimdi yedek al</button></div></div>
+    <p id="bk-out"></p>
+  </details>
+  <details id="dp-ban" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">⛔ Hesabı askıya al</summary>
+    <div id="ban-state"></div>
+    <div id="ban-form">
+      <label style="margin-top:10px">Süre</label>
+      <div class="dur" id="ban-dur">
+        <button data-h="1">1 saat</button><button data-h="24" class="on">1 gün</button><button data-h="72">3 gün</button><button data-h="168">7 gün</button><button data-h="720">30 gün</button><button data-h="0">Süresiz</button>
+      </div>
+      <label>Sebep (oyuncuya gösterilir)</label><input id="ban-reason" maxlength="200" placeholder="ör. Hile kullanımı tespit edildi">
+      <p class="muted" style="margin:8px 0 0">Askıdaki oyuncu oyunu açınca kapatılamayan bir uyarı görür ve oynayamaz; kapalıyken kazanç da almaz. Süre dolunca ya da askıyı kaldırınca oyun kendiliğinden açılır (oyun açıksa anında).</p>
+      <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button class="danger" id="ban-go">⛔ Askıya al</button></div></div>
+    </div>
+    <p id="ban-msg"></p>
+  </details>
+  <div class="danger-zone" id="dp-danger">
+    <div><b>⚠️ Tehlikeli bölge</b><p>Hesabı ve tüm bulut verilerini kalıcı olarak siler.</p></div>
+    <button class="danger" id="dp-del">🗑️ Hesabı sil</button>
+  </div>
+</div></dialog>
+<dialog id="dlg-del">
+  <div class="del-head"><div class="del-ico">🗑️</div><h2>Hesap kalıcı olarak silinsin mi?</h2><p>Bu işlem <b>geri alınamaz</b>.</p></div>
+  <div class="del-body">
+    <div class="del-who"><div class="del-av" id="del-av">?</div><div><div class="n" id="del-name"></div><div class="m" id="del-meta"></div></div></div>
+    <ul class="del-list">
+      <li>Oyuncu özeti ve istatistikleri</li>
+      <li>Oyun kaydının bulut yedeği</li>
+      <li>Kullanıcı adı (serbest kalır, başkası alabilir)</li>
+      <li>Bekleyen hediyeleri ve hediye geçmişi</li>
+    </ul>
+    <label class="del-opt"><input type="checkbox" id="del-wipe" checked><span><b>Cihazdaki oyunu da sıfırla.</b> Oyun açıksa hemen, kapalıysa açılınca oyuncunun telefonundaki ilerlemesi silinir ve oyun baştan başlar. İşaretlemezsen oyuncu oynamaya devam edince hesap yeniden oluşur.</span></label>
+    <div class="del-warn" id="del-warn"></div>
+    <input id="del-confirm" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="del-steps" id="del-steps"></div>
+    <div class="del-btns"><button class="ghost" id="del-cancel">Vazgeç</button><button id="del-go" disabled>Kalıcı olarak sil</button></div>
+  </div>
+</dialog>
+<dialog id="dlg-ask">
+  <div class="del-head" id="ask-head"><div class="del-ico" id="ask-ico">⛔</div><h2 id="ask-title"></h2><p id="ask-sub"></p></div>
+  <div class="del-body"><div id="ask-body"></div><div class="del-btns"><button class="ghost" id="ask-no">Vazgeç</button><button id="ask-ok"></button></div></div>
+</dialog>
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { getFirestore, collection, doc, getDoc, getDocs, query, orderBy, limit, where, addDoc, deleteDoc, setDoc, serverTimestamp, writeBatch, Timestamp, getCountFromServer } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey: 'AIzaSyCvPap7oTyQtS4WkSU4Ugd5l5gA_4smQEE', authDomain: 'woodempire-37573.firebaseapp.com', projectId: 'woodempire-37573',
+  storageBucket: 'woodempire-37573.firebasestorage.app', messagingSenderId: '674111438478', appId: '1:674111438478:web:2b063ff9fd9fa6de2493df',
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = (s) => document.querySelector(s);
+const show = (id) => ['#v-login', '#v-noadmin', '#v-panel'].forEach((v) => $(v).classList.toggle('hide', v !== id));
+const nf = new Intl.NumberFormat('tr-TR');
+// Oyunla aynı birimler: K, M, B, T, Q, AA, AB … ZZ (her biri ×1000)
+const UNITS = ['', 'K', 'M', 'B', 'T', 'Q']; for (let a = 0; a < 26; a++) for (let b = 0; b < 26; b++) UNITS.push(String.fromCharCode(65 + a) + String.fromCharCode(65 + b));
+const big = (n) => { n = Number(n) || 0; if (Math.abs(n) < 1e4) return nf.format(Math.round(n)); let i = 0; while (Math.abs(n) >= 1000 && i < UNITS.length - 1) { n /= 1000; i++; } return n.toFixed(Math.abs(n) >= 100 ? 0 : 1).replace('.0', '').replace('.', ',') + UNITS[i]; };
+/** "400B", "1,5T", "359AB", "400A" (= AA), "12000" → sayı. Boş → null, geçersiz → NaN. */
+const parseAmt = (t) => { t = String(t ?? '').trim().toUpperCase().replace(/\s+/g, ''); if (!t) return null;
+  const m = t.match(/^(\d+(?:[.,]\d+)?)([A-Z]{0,2})$/); if (!m) return NaN;
+  let u = m[2]; if (u.length === 1 && !UNITS.includes(u)) u = u + u;
+  const k = UNITS.indexOf(u); if (k < 0) return NaN;
+  const v = Math.floor(Number(m[1].replace(',', '.')) * Math.pow(1000, k)); return isFinite(v) && v >= 0 ? v : NaN; };
+const amtInput = (id, val) => `<input type="text" inputmode="text" autocomplete="off" id="${id}" value="${val}" placeholder="ör. 400B" data-amt>`;
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ms = (t) => (t?.toMillis ? t.toMillis() : 0);
+const ago = (t) => { const m = ms(t); if (!m) return '—'; const s = (Date.now() - m) / 1000; if (s < 90) return 'şimdi'; if (s < 3600) return Math.round(s / 60) + ' dk önce'; if (s < 86400) return Math.round(s / 3600) + ' sa önce'; return Math.round(s / 86400) + ' gün önce'; };
+const dt = (t) => { const m = ms(t); return m ? new Date(m).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'; };
+const hrs = (s) => { s = Number(s) || 0; return s < 3600 ? Math.round(s / 60) + ' dk' : (s / 3600).toFixed(1).replace('.', ',') + ' sa'; };
+const pname = (p) => p.name || `Oyuncu #${p.id.slice(0, 6).toUpperCase()}`;
+
+let bans = new Map();
+const banOf = (id) => { const b = bans.get(id); if (!b) return null; const u = b.until ? ms(b.until) : null; return !u || u > Date.now() ? { ...b, untilMs: u } : null; };
+const leftTxt = (u) => { const m = Math.max(0, u - Date.now()) / 6e4; return m < 60 ? Math.ceil(m) + ' dk' : m < 1440 ? Math.round(m / 60) + ' sa' : Math.round(m / 1440) + ' gün'; };
+let players = [], sortKey = 'lastSeen', sortDir = -1, current = null;
+
+$('#btn-login').onclick = async () => {
+  const pv = new GoogleAuthProvider();
+  try { await signInWithPopup(auth, pv); } catch (e) { if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') await signInWithRedirect(auth, pv); else $('#login-msg').textContent = 'Giriş başarısız: ' + (e.code || e.message); }
+};
+$('#btn-logout2').onclick = () => signOut(auth);
+$('#copy-uid').onclick = () => navigator.clipboard?.writeText($('#my-uid').textContent);
+
+onAuthStateChanged(auth, async (u) => {
+  if (!u || u.isAnonymous) { $('#who').textContent = ''; show('#v-login'); return; }
+  $('#who').innerHTML = `${esc(u.email || '')}<br><a href="#" id="lo">Çıkış</a>`;
+  $('#lo').onclick = (e) => { e.preventDefault(); signOut(auth); };
+  let admin = false;
+  try { admin = (await getDoc(doc(db, 'admins', u.uid))).exists(); } catch {}
+  if (!admin) { $('#my-uid').textContent = u.uid; show('#v-noadmin'); return; }
+  show('#v-panel');
+  loadAll();
+});
+
+async function loadAll() {
+  $('#list-info').textContent = 'Yükleniyor…';
+  try {
+    const col = collection(db, 'players');
+    const day = Timestamp.fromMillis(Date.now() - 864e5), week = Timestamp.fromMillis(Date.now() - 7 * 864e5);
+    const [total, d1, d7, named, snap] = await Promise.all([
+      getCountFromServer(col), getCountFromServer(query(col, where('lastSeen', '>=', day))), getCountFromServer(query(col, where('lastSeen', '>=', week))),
+      getCountFromServer(query(col, where('nameLower', '!=', null))), getDocs(query(col, orderBy('lastSeen', 'desc'), limit(1000))),
+    ]);
+    players = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    try { const bs = await getDocs(collection(db, 'bans')); bans = new Map(bs.docs.map((d) => [d.id, d.data()])); } catch { bans = new Map(); }
+    const avgLv = players.length ? players.reduce((a, p) => a + (p.level || 1), 0) / players.length : 0;
+    const gold = players.reduce((a, p) => a + (p.gold || 0), 0);
+    const st = [['Toplam oyuncu', nf.format(total.data().count)], ['Son 24 saat aktif', nf.format(d1.data().count)], ['Son 7 gün aktif', nf.format(d7.data().count)],
+      ['Kullanıcı adı alan', nf.format(named.data().count)], ['Ortalama seviye', avgLv.toFixed(1).replace('.', ',')], ['Oyunculardaki altın', big(gold)]];
+    $('#stats').innerHTML = st.map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join('');
+    renderPlayers();
+  } catch (e) { $('#list-info').innerHTML = `<span class="err">Okunamadı: ${esc(e.code || e.message)}</span> — firestore.rules yayınlandı mı?`; }
+}
+
+function renderPlayers() {
+  const q = $('#q').value.trim().toLocaleLowerCase('tr-TR');
+  let list = players.filter((p) => !q || (p.nameLower || '').includes(q) || p.id.toLowerCase().startsWith(q.toLowerCase()));
+  const val = (p) => sortKey === 'name' ? pname(p).toLocaleLowerCase('tr-TR') : (sortKey === 'lastSeen' || sortKey === 'createdAt') ? ms(p[sortKey]) : (p[sortKey] || 0);
+  list.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * sortDir);
+  $('#list-info').textContent = `${list.length} oyuncu gösteriliyor${players.length >= 1000 ? ' (en son görülen 1000 oyuncu)' : ''}`;
+  $('#rows').innerHTML = list.slice(0, 500).map((p) => `<tr class="p" data-id="${p.id}"><td><b>${esc(pname(p))}</b> ${banOf(p.id) ? '<span class="tag ban">⛔ Askıda</span> ' : ''}${p.noAds || p.premium ? '<span class="tag on">Premium</span>' : ''} <span class="tag">${esc(p.platform || '')}</span></td>
+    <td class="num">${p.level || 1}</td><td class="num">${big(p.money)}</td><td class="num">${big(p.gold)}</td><td class="num">${p.zones || 1}</td><td class="num">${p.workers || 0}</td>
+    <td class="num">${hrs(p.playTime)}</td><td>${ago(p.lastSeen)}</td><td>${dt(p.createdAt)}</td></tr>`).join('') || '<tr><td colspan="9" class="muted">Oyuncu yok</td></tr>';
+}
+$('#q').oninput = renderPlayers;
+$('#reload').onclick = loadAll;
+document.querySelectorAll('th[data-s]').forEach((th) => th.onclick = () => { const k = th.dataset.s; sortDir = sortKey === k ? -sortDir : -1; sortKey = k; renderPlayers(); });
+$('#rows').onclick = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr) openPlayer(players.find((p) => p.id === tr.dataset.id)); };
+
+// Seviye ve hareket hızı artırılıp AZALTILABİLİR (+2 / -1); diğerleri yalnızca eklenir.
+const SIGNED = new Set(['level', 'speed']);
+const SPEED_MAX = 15; // oyundaki PLAYER_UPGRADES.speed.max (oyunda Sv.1…16)
+const parseSigned = (t) => { t = String(t ?? '').trim().replace(/\s+/g, '').replace('−', '-'); if (!t) return null; if (!/^[+-]?\d+$/.test(t)) return NaN; return parseInt(t, 10); };
+const showVal = (k, v) => v == null ? '—' : k === 'speed' ? `Sv.${v + 1}` : k === 'level' ? String(v) : big(v);
+const afterVal = (k, cur, v, max) => k === 'speed' ? Math.max(0, Math.min(max ?? SPEED_MAX, cur + v)) : k === 'level' ? Math.max(1, cur + v) : cur + v;
+const ADD_FIELDS = [['level', '⭐ Seviye'], ['speed', '🏃 Hareket hızı'], ['gold', '🪙 Altın'], ['money', '💰 Para'], ['xp', '✨ XP'], ['logs', '🪵 Kütük']];
+const giftForm = (p) => `<div class="addgrid"><div class="ah">Alan</div><div class="ah">Şu an</div><div class="ah">Ekle</div>
+  ${ADD_FIELDS.map(([k, name]) => `<div class="an">${name}</div><div class="ac">${p ? `<b>${showVal(k, p[k])}</b>${k === 'speed' && p.speed != null ? `<span class="muted"> / Sv.${(p.speedMax ?? SPEED_MAX) + 1}</span>` : ''}` : '<span class="muted">—</span>'}</div>
+    <div><input type="text" autocomplete="off" id="g-${k}" data-amt data-cur="${p && p[k] != null ? p[k] : ''}" data-max="${p?.speedMax ?? SPEED_MAX}" data-k="${k}" placeholder="${SIGNED.has(k) ? 'ör. +2 veya -1' : '+ ör. 400B'}"></div>`).join('')}</div>
+  <p class="muted" style="margin:6px 0 0"><b>Seviye</b> ve <b>hareket hızı</b> azaltılabilir: başına eksi koy (ör. <b>-2</b>). Hareket hızı oyundaki gibi Sv.1 ile Sv.${SPEED_MAX + 1} arasında kalır.${p && p.speed == null ? ' <span class="err">Bu oyuncunun hız bilgisi henüz yok (oyunun eski sürümü).</span>' : ''}</p>
+  <p class="muted" style="margin:6px 0 0">Yazdığın miktar <b>mevcut değerin üstüne eklenir</b>; her kutunun altında eklendikten sonraki değer görünür. Kısaltma: <b>400B</b>, <b>1,5T</b>, <b>400A</b>, <b>359AB</b> (K=bin, M=milyon, B=milyar, T, Q, AA, AB… her biri ×1000). Değerler oyuncunun son eşitlemesine göredir (en fazla ~5 dk eski olabilir).</p>
+  <div style="margin-top:8px"><label>Mesaj (isteğe bağlı, oyuncuya gösterilir)</label><input id="g-msg" maxlength="140" placeholder="ör. Turnuva ödülün!"></div>
+  <div style="margin-top:8px"><label>Geçerlilik</label><select id="g-exp"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7" selected>7 gün</option><option value="30">30 gün</option></select></div>`;
+
+function openPlayer(p) {
+  current = p;
+  $('#dp-title').textContent = p ? pname(p) : 'Herkese hediye';
+  $('#dp-sub').textContent = p ? `Kimlik: ${p.id}` : 'Tüm oyuncular oyunu açtıklarında bir kez alır (yeni katılanlar dahil, geçerlilik süresince).';
+  $('#dp-kv').innerHTML = p ? [['Seviye', p.level], ['Hareket hızı', p.speed == null ? '— (eski sürüm)' : `Sv.${p.speed + 1} / Sv.${(p.speedMax ?? SPEED_MAX) + 1}`], ['XP', big(p.xp)], ['Para', big(p.money)], ['Altın', big(p.gold)], ['Toplam kazanç', big(p.totalEarned)], ['Alan sayısı', p.zones],
+    ['İşçi', p.workers], ['Hayvan', p.animals], ['Depodaki kütük', big(p.logs)], ['Kesilen ağaç', big(p.trees)], ['Gönderilen kamyon', big(p.trucks)], ['Oynama süresi', hrs(p.playTime)],
+    ['Premium / Reklamsız', p.premium || p.noAds ? 'Evet' : 'Hayır'], ['Platform', p.platform], ['Son görülme', dt(p.lastSeen)], ['Katılma', dt(p.createdAt)]]
+    .map(([k, v]) => `<span>${k}</span><b>${esc(v ?? '—')}</b>`).join('') : '';
+  $('#dp-form').innerHTML = giftForm(p); $('#dp-add-title').textContent = p ? 'Ekle (mevcut değerin üstüne)' : 'Herkese hediye (her oyuncunun kendi değerinin üstüne)'; $('#dp-msg').textContent = ''; $('#dp-set-msg').textContent = '';
+  $('#dp-set-wrap').classList.toggle('hide', !p);
+  if (p) { for (const k of ['level', 'xp', 'gold', 'money', 'speed']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : k === 'speed' ? (p.speed == null ? '?' : p.speed + 1) : big(p[k])); } $('#s-msg').value = ''; }
+  amtPreview();
+  $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false; $('#dp-danger').classList.toggle('hide', !p);
+  for (const id of ['#dp-reset', '#dp-backups']) { $(id).classList.toggle('hide', !p); $(id).open = false; }
+  if (p) { $('#rs-out').textContent = ''; $('#rs-note').value = ''; $('#rs-level').value = ''; $('#bk-out').textContent = ''; loadBackups(p); }
+  $('#dp-ban').classList.toggle('hide', !p); if (p) { $('#dp-ban').open = !!banOf(p.id); banRender(p); }
+  if (p) xferInit(p);
+  $('#dp-rename').classList.toggle('hide', !p); $('#dp-rename').open = false;
+  if (p) { $('#r-cur').textContent = p.name || '(yok)'; $('#r-name').value = ''; $('#r-msg').textContent = ''; }
+  $('#dlg-player').showModal();
+}
+
+// ---------- HESAP AKTARIMI ----------
+let xferSave = null, xferTarget = null;
+function findPlayer(q) {
+  q = String(q || '').trim(); if (!q) return null;
+  const low = q.toLocaleLowerCase('tr-TR').replace(/^oyuncu\s*#/, '');
+  return players.find((x) => x.id === q) || players.find((x) => (x.nameLower || '') === low || (x.name || '').toLocaleLowerCase('tr-TR') === low)
+    || (low.length >= 6 ? players.find((x) => x.id.toLowerCase().startsWith(low)) : null) || null;
+}
+/** Kaynak oyuna "hemen yedekle" isteği gönderir; oyun açıksa yeni yedek birkaç saniyede gelir. */
+async function freshBackup(src) {
+  const before = ms(xferSave?.at);
+  try { await addDoc(collection(db, 'gifts'), { to: src.id, toName: pname(src), kind: 'backup', createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid }); }
+  catch { return false; }
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try { const snap = await getDoc(doc(db, 'saves', src.id)); if (snap.exists() && ms(snap.data().at) > before) { xferSave = snap.data(); return true; } } catch {}
+  }
+  return false;
+}
+async function xferInit(p) {
+  xferSave = null; xferTarget = null;
+  $('#x-name').checked = !!p.name; $('#x-name').disabled = !p.name;
+  $('#x-name-lbl').innerHTML = p.name ? `Kullanıcı adını da taşı: <b>${esc(p.name)}</b> adı hedef hesaba geçer` : 'Kullanıcı adını da taşı (kaynak hesabın adı yok)';
+  $('#x-to').value = ''; $('#x-target').innerHTML = ''; $('#x-msg').textContent = ''; $('#x-msg-in').value = '';
+  $('#x-list').innerHTML = players.filter((x) => x.id !== p.id).slice(0, 300).map((x) => `<option value="${esc(x.name || x.id)}">${esc(pname(x))} · Sv.${x.level ?? '?'}</option>`).join('');
+  $('#x-backup').textContent = 'Bulut yedeği kontrol ediliyor…';
+  try {
+    const snap = await getDoc(doc(db, 'saves', p.id));
+    if (current !== p) return;
+    if (!snap.exists()) { $('#x-backup').innerHTML = '<span class="err">Bu oyuncunun bulut yedeği yok.</span> Oyuncu oyunun yeni sürümünü açınca (en geç 5 dk içinde) yedek oluşur.'; return; }
+    xferSave = snap.data();
+    $('#x-backup').innerHTML = `Bulut yedeği: <b>${ago(xferSave.at)}</b> · Seviye ${xferSave.level ?? '?'} · ${Math.max(1, Math.round((xferSave.size || 0) / 1024))} KB`;
+  } catch (e) { $('#x-backup').innerHTML = `<span class="err">Yedek okunamadı: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
+}
+// ---------- KULLANICI ADI DEĞİŞTİRME ----------
+const NAME_RE = /^[A-Za-z0-9_çğıöşüÇĞİÖŞÜ]{3,16}$/;
+$('#r-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const nn = $('#r-name').value.trim(), low = nn.toLocaleLowerCase('tr-TR');
+  if (!NAME_RE.test(nn)) { $('#r-msg').innerHTML = '<span class="err">3–16 karakter; yalnızca harf, rakam ve _ kullan.</span>'; return; }
+  if (nn === p.name) { $('#r-msg').innerHTML = '<span class="err">Ad zaten bu.</span>'; return; }
+  $('#r-go').disabled = true;
+  try {
+    const ex = await getDoc(doc(db, 'usernames', low));
+    if (ex.exists() && ex.data().uid !== p.id) { const o = players.find((x) => x.id === ex.data().uid); $('#r-msg').innerHTML = `<span class="err">Bu ad başka bir oyuncuda: ${esc(o ? pname(o) : ex.data().uid)}</span>`; $('#r-go').disabled = false; return; }
+    if (!confirm(`${pname(p)} → ${nn}\nKullanıcı adı değiştirilsin mi?`)) { $('#r-go').disabled = false; return; }
+    const b = writeBatch(db);
+    if (p.nameLower && p.nameLower !== low) b.delete(doc(db, 'usernames', p.nameLower));
+    b.set(doc(db, 'usernames', low), { uid: p.id, name: nn, at: serverTimestamp() });
+    b.update(doc(db, 'players', p.id), { name: nn, nameLower: low });
+    await b.commit();
+    await addDoc(collection(db, 'gifts'), { to: p.id, toName: nn, kind: 'rename', name: nn, createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid });
+    p.name = nn; p.nameLower = low; $('#dp-title').textContent = nn; $('#r-cur').textContent = nn; renderPlayers();
+    $('#r-msg').innerHTML = '<span class="ok">Ad değiştirildi. Oyun açıksa hemen, kapalıysa açınca görünür.</span>';
+  } catch (e) { $('#r-msg').innerHTML = `<span class="err">Değiştirilemedi: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
+  $('#r-go').disabled = false;
+};
+
+// ---------- MODERN ONAY PENCERESİ ----------
+function ask({ icon, title, sub = '', body = '', ok, tone = 'red' }) {
+  $('#ask-ico').textContent = icon; $('#ask-title').textContent = title; $('#ask-sub').innerHTML = sub; $('#ask-body').innerHTML = body;
+  $('#ask-head').className = 'del-head' + (tone === 'green' ? ' green' : tone === 'amber' ? ' amber' : '');
+  $('#ask-ok').textContent = ok; $('#ask-ok').className = tone === 'green' ? 'green' : 'red';
+  const d = $('#dlg-ask'); d.showModal();
+  return new Promise((res) => {
+    const done = (v) => { d.close(); $('#ask-ok').onclick = $('#ask-no').onclick = null; d.oncancel = null; res(v); };
+    $('#ask-ok').onclick = () => done(true); $('#ask-no').onclick = () => done(false); d.oncancel = (e) => { e.preventDefault(); done(false); };
+  });
+}
+
+// ---------- YEDEKLER ----------
+const byMe = () => auth.currentUser.email || auth.currentUser.uid;
+/** Oyuncudan anlık kayıt ister (oyun açıksa birkaç sn'de gelir). Gelirse yeni kaydı, gelmezse null döner. */
+async function requestFresh(p, prevAt) {
+  try { await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'backup', createdAt: serverTimestamp(), by: byMe() }); } catch { return null; }
+  for (let i = 0; i < 8; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try { const sn = await getDoc(doc(db, 'saves', p.id)); if (sn.exists() && ms(sn.data().at) > prevAt) return sn.data(); } catch {}
+  }
+  return null;
+}
+/** Oyuncunun kaydını backups/ altına kopyalar. {id, fresh, ageMin} ya da yedek yoksa null. */
+async function snapshotPlayer(p, reason, fresh = true) {
+  let cur = null;
+  try { const sn = await getDoc(doc(db, 'saves', p.id)); cur = sn.exists() ? sn.data() : null; } catch {}
+  let isFresh = false;
+  if (fresh) { const f = await requestFresh(p, ms(cur?.at)); if (f) { cur = f; isFresh = true; } }
+  if (!cur?.data) return null;
+  const ref = await addDoc(collection(db, 'backups'), { uid: p.id, name: pname(p), data: cur.data, enc: cur.enc || 'json', size: cur.size || cur.data.length,
+    level: cur.level ?? p.level ?? null, money: p.money ?? null, gold: p.gold ?? null, reason, saveAt: cur.at || null, at: serverTimestamp(), by: byMe() });
+  return { id: ref.id, fresh: isFresh, ageMin: Math.round((Date.now() - ms(cur.at)) / 6e4) };
+}
+let backups = [];
+async function loadBackups(p) {
+  $('#bk-count').textContent = '…'; $('#bk-list').innerHTML = '<p class="muted">Yükleniyor…</p>';
+  try {
+    const sn = await getDocs(query(collection(db, 'backups'), where('uid', '==', p.id)));
+    if (current !== p) return;
+    backups = sn.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ms(b.at) - ms(a.at));
+  } catch (e) { $('#bk-list').innerHTML = `<p class="err">Yedekler okunamadı: ${esc(e.code || e.message)} (Firestore kurallarını güncelledin mi?)</p>`; $('#bk-count').textContent = '?'; return; }
+  $('#bk-count').textContent = backups.length;
+  $('#bk-list').innerHTML = backups.length ? backups.map((b) => `<div class="bk"><div class="t"><b>${dt(b.at)}</b><span class="why">${esc(b.reason || 'Elle')}</span>
+      <small>Seviye ${b.level ?? '?'} · ${big(b.money)} para · ${big(b.gold)} altın · ${Math.max(1, Math.round((b.size || 0) / 1024))} KB</small></div>
+      <div class="b"><button data-r="${b.id}">↩️ Geri yükle</button><button class="ghost" data-d="${b.id}">Sil</button></div></div>`).join('')
+    : '<p class="muted">Bu oyuncunun henüz yedeği yok.</p>';
+}
+$('#bk-list').onclick = async (e) => {
+  const p = current; if (!p) return;
+  const r = e.target.closest('[data-r]'), d = e.target.closest('[data-d]');
+  if (r) {
+    const b = backups.find((x) => x.id === r.dataset.r); if (!b) return;
+    if (!(await ask({ icon: '↩️', tone: 'green', ok: 'Geri yükle', title: 'Yedek geri yüklensin mi?', sub: `${esc(pname(p))} · ${dt(b.at)}`,
+      body: `<div class="ban-box" style="background:var(--chip);border-color:var(--line)">Yedek: <b>Seviye ${b.level ?? '?'}</b> · ${big(b.money)} para · ${big(b.gold)} altın<br><span class="muted">${esc(b.reason || '')}</span></div>
+        <p class="muted" style="margin:8px 0 0">Oyuncunun şu anki ilerlemesi bu yedekle değiştirilir. Şu anki hâli de önce yedeklenir, yani bu işlem de geri alınabilir. Oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır.</p>` }))) return;
+    $('#bk-out').innerHTML = '<span class="muted">⏳ Şu anki hâl yedekleniyor…</span>';
+    try {
+      await snapshotPlayer(p, 'Geri yükleme öncesi');
+      await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'restore', backup: true, backupAt: dt(b.at), save: b.data, enc: b.enc || 'json', level: b.level ?? null,
+        fromUid: p.id, fromName: 'Yedek ' + dt(b.at), msg: '', createdAt: serverTimestamp(), by: byMe() });
+      $('#bk-out').innerHTML = '<span class="ok">Geri yükleme gönderildi. Oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır.</span>';
+      toast(`↩️ ${pname(p)}: yedek geri yükleniyor`); loadBackups(p);
+    } catch (e2) { $('#bk-out').innerHTML = `<span class="err">Geri yüklenemedi: ${esc(e2.code || e2.message)}</span>`; }
+  }
+  if (d) {
+    const b = backups.find((x) => x.id === d.dataset.d); if (!b) return;
+    if (!(await ask({ icon: '🗑️', ok: 'Yedeği sil', title: 'Yedek silinsin mi?', sub: dt(b.at), body: '<p style="margin:0">Bu yedek kalıcı olarak silinir, bir daha geri yüklenemez.</p>' }))) return;
+    try { await deleteDoc(doc(db, 'backups', b.id)); toast('Yedek silindi'); loadBackups(p); } catch (e2) { $('#bk-out').innerHTML = `<span class="err">Silinemedi: ${esc(e2.code || e2.message)}</span>`; }
+  }
+};
+$('#bk-now').onclick = async () => {
+  const p = current; if (!p) return;
+  $('#bk-now').disabled = true; $('#bk-out').innerHTML = '<span class="muted">⏳ Oyuncudan güncel kayıt isteniyor… (en fazla 16 sn)</span>';
+  try {
+    const r = await snapshotPlayer(p, 'Elle alınan yedek');
+    $('#bk-out').innerHTML = !r ? '<span class="err">Bu oyuncunun bulut kaydı yok (oyunun yeni sürümünü açmamış).</span>'
+      : r.fresh ? '<span class="ok">✔ Güncel yedek alındı.</span>' : `<span class="ok">✔ Yedek alındı.</span> <span class="muted">Oyuncu çevrimdışı; son kaydı (${r.ageMin} dk önce) yedeklendi.</span>`;
+    loadBackups(p);
+  } catch (e) { $('#bk-out').innerHTML = `<span class="err">Yedeklenemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#bk-now').disabled = false;
+};
+
+// ---------- YEDEKLİ SIFIRLAMA ----------
+let rsMode = 'full';
+$('#rs-mode').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; rsMode = b.dataset.m; $('#rs-mode').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#rs-full-info').classList.toggle('hide', rsMode !== 'full'); $('#rs-values').classList.toggle('hide', rsMode === 'full'); };
+$('#rs-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const note = $('#rs-note').value.trim().slice(0, 140);
+  let set = null;
+  if (rsMode === 'values') {
+    set = {};
+    const lv = parseInt($('#rs-level').value, 10); if (lv >= 1) set.level = lv;
+    if ($('#rs-money').checked) set.money = 0; if ($('#rs-gold').checked) set.gold = 0; if ($('#rs-xp').checked) set.xp = 0;
+    if (!Object.keys(set).length) { $('#rs-out').innerHTML = '<span class="err">Yeni seviye yaz ya da en az bir değeri seç.</span>'; return; }
+  }
+  const what = set ? Object.entries(set).map(([k, v]) => `<li>${({ level: 'Seviye', money: 'Para', gold: 'Altın', xp: 'XP' })[k]}: ${k === 'level' ? (p.level ?? '?') : big(p[k])} → <b>${big(v)}</b></li>`).join('')
+    : '<li>Seviye, para, altın, XP</li><li>Alanlar, işçiler, makineler, hayvanlar</li><li>Yükseltmeler ve görevler</li>';
+  if (!(await ask({ icon: '♻️', tone: 'amber', ok: 'Yedekle ve sıfırla', title: set ? 'Değerler düşürülsün mü?' : 'İlerleme sıfırlansın mı?', sub: `${esc(pname(p))} · Seviye ${p.level ?? '?'} · ${big(p.money)} para`,
+    body: `<ul class="del-list" style="margin-top:0">${what}</ul><div class="ban-box" style="background:color-mix(in srgb,var(--green2) 10%,var(--card));border-color:color-mix(in srgb,var(--green2) 40%,transparent)">💾 Önce şu anki tüm verisi <b>yedeklenecek</b>; Yedekler bölümünden geri yükleyebilirsin.</div>` }))) return;
+  $('#rs-go').disabled = true;
+  try {
+    $('#rs-out').innerHTML = '<span class="muted">⏳ Yedek alınıyor… (oyuncu çevrimiçiyse güncel kayıt istenir)</span>';
+    const r = await snapshotPlayer(p, set ? 'Değer düşürme öncesi' : 'Sıfırlama öncesi');
+    if (!r && !(await ask({ icon: '⚠️', tone: 'amber', ok: 'Yine de sıfırla', title: 'Yedek alınamadı', sub: esc(pname(p)), body: '<p style="margin:0">Bu oyuncunun bulut kaydı yok (oyunun yeni sürümünü açmamış). Devam edersen <b>geri alınamaz</b>.</p>' }))) { $('#rs-out').textContent = ''; $('#rs-go').disabled = false; return; }
+    if (set) await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'set', set, msg: note, createdAt: serverTimestamp(), by: byMe() });
+    else await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'reset', msg: note, createdAt: serverTimestamp(), by: byMe() });
+    $('#rs-out').innerHTML = `<span class="ok">✔ ${r ? (r.fresh ? 'Güncel yedek alındı' : `Yedek alındı (son kayıt ${r.ageMin} dk önce)`) + ' ve ' : ''}${set ? 'değerler gönderildi' : 'sıfırlama gönderildi'}. Oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır.</span>`;
+    toast(`♻️ ${pname(p)} ${set ? 'değerleri düşürüldü' : 'sıfırlandı'} (yedekli)`); loadBackups(p); loadGifts();
+  } catch (e) { $('#rs-out').innerHTML = `<span class="err">Yapılamadı: ${esc(e.code || e.message)} (Firestore kurallarını güncelledin mi?)</span>`; }
+  $('#rs-go').disabled = false;
+};
+
+// ---------- ASKIYA ALMA ----------
+let banHours = 24;
+const durTxt = (h) => !h ? 'Süresiz' : h < 24 ? `${h} saat` : `${h / 24} gün`;
+function banRender(p) {
+  const b = banOf(p.id);
+  $('#ban-msg').textContent = '';
+  $('#ban-state').innerHTML = b ? `<div class="ban-box"><b>⛔ Askıda</b> · ${b.untilMs ? `bitiş <b>${new Date(b.untilMs).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}</b> (${leftTxt(b.untilMs)} kaldı)` : '<b>süresiz</b>'}
+      ${b.reason ? `<br>Sebep: ${esc(b.reason)}` : ''}<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button id="ban-lift">✅ Askıyı kaldır</button><span class="muted" style="align-self:center">veya aşağıdan yeni süre vererek değiştir</span></div></div>`
+    : '<p class="muted" style="margin:8px 0 0">Bu hesap şu an askıda değil.</p>';
+  $('#ban-go').textContent = b ? '⛔ Askıyı güncelle' : '⛔ Askıya al';
+  $('#ban-reason').value = b?.reason || '';
+  const lift = $('#ban-lift');
+  if (lift) lift.onclick = async () => {
+    if (!(await ask({ icon: '✅', title: 'Askı kaldırılsın mı?', sub: esc(pname(p)), body: '<p style="margin:0">Oyuncu hemen oynamaya devam edebilir. Oyun açıksa uyarı anında kapanır.</p>', ok: 'Askıyı kaldır', tone: 'green' }))) return;
+    try { await deleteDoc(doc(db, 'bans', p.id)); bans.delete(p.id); banRender(p); renderPlayers(); toast(`✅ ${pname(p)} askıdan çıkarıldı`); }
+    catch (e) { $('#ban-msg').innerHTML = `<span class="err">Kaldırılamadı: ${esc(e.code || e.message)}</span>`; }
+  };
+}
+$('#ban-dur').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; banHours = +b.dataset.h; $('#ban-dur').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); };
+$('#ban-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const reason = $('#ban-reason').value.trim().slice(0, 200);
+  const until = banHours ? Date.now() + banHours * 36e5 : null;
+  const ok = await ask({ icon: '⛔', title: 'Hesap askıya alınsın mı?', tone: 'amber', ok: 'Askıya al',
+    sub: `${esc(pname(p))} · Seviye ${p.level ?? '?'}`,
+    body: `<ul class="del-list" style="margin-top:0"><li>Oyuncu oyunu oynayamaz (açıksa anında kilitlenir)</li><li>Kapalıyken kazanç almaz</li></ul>
+      <div class="ban-box">Süre: <b>${durTxt(banHours)}</b>${until ? ` — bitiş ${new Date(until).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}<br>Sebep: ${reason ? esc(reason) : '<span class="muted">(yazılmadı)</span>'}</div>
+      <p class="muted" style="margin:8px 0 0">İlerlemesi silinmez; askı bitince kaldığı yerden devam eder.</p>` });
+  if (!ok) return;
+  $('#ban-go').disabled = true;
+  try {
+    const data = { reason, until: until ? Timestamp.fromMillis(until) : null, name: pname(p), at: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid };
+    await setDoc(doc(db, 'bans', p.id), data);
+    bans.set(p.id, data);
+    banRender(p); renderPlayers(); toast(`⛔ ${pname(p)} ${durTxt(banHours).toLocaleLowerCase('tr-TR')} askıya alındı`);
+  } catch (e) { $('#ban-msg').innerHTML = `<span class="err">Askıya alınamadı: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
+  $('#ban-go').disabled = false;
+};
+
+// ---------- HESAP SİLME ----------
+let toastT; function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 3200); }
+let delWord = '';
+$('#dp-del').onclick = () => {
+  const p = current; if (!p) return;
+  delWord = p.name || 'SİL';
+  $('#del-av').textContent = (p.name || '?').slice(0, 1).toLocaleUpperCase('tr-TR');
+  $('#del-name').textContent = pname(p);
+  $('#del-meta').textContent = `Seviye ${p.level ?? '?'} · ${big(p.money)} para · ${big(p.gold)} altın · ${ago(p.lastSeen)} görüldü`;
+  $('#del-warn').innerHTML = `Onaylamak için <u>${esc(delWord)}</u> yaz:`;
+  $('#del-confirm').value = ''; $('#del-confirm').placeholder = delWord; $('#del-confirm').classList.remove('match');
+  $('#del-wipe').checked = true; $('#del-steps').textContent = ''; $('#del-go').disabled = true; $('#del-cancel').disabled = false;
+  $('#dlg-del').showModal(); setTimeout(() => $('#del-confirm').focus(), 50);
+};
+$('#del-confirm').oninput = () => { const ok = $('#del-confirm').value.trim() === delWord; $('#del-go').disabled = !ok; $('#del-confirm').classList.toggle('match', ok); };
+$('#del-cancel').onclick = () => $('#dlg-del').close();
+$('#dlg-del').addEventListener('cancel', (e) => { if ($('#del-cancel').disabled) e.preventDefault(); });
+$('#del-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const by = auth.currentUser.email || auth.currentUser.uid, step = (t) => { $('#del-steps').innerHTML = t; };
+  $('#del-go').disabled = true; $('#del-cancel').disabled = true;
+  try {
+    step('⏳ Silmeden önce yedek alınıyor…');
+    try { await snapshotPlayer(p, 'Silme öncesi', false); } catch {}
+    let wipeId = null;
+    if ($('#del-wipe').checked) { step('⏳ Cihaza sıfırlama komutu gönderiliyor…'); wipeId = (await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'wipe', createdAt: serverTimestamp(), by })).id; }
+    step('⏳ Hediyeler ve geçmiş siliniyor…');
+    const [cl, gs] = await Promise.all([getDocs(collection(db, 'players', p.id, 'claimed')), getDocs(query(collection(db, 'gifts'), where('to', '==', p.id)))]);
+    const refs = [...cl.docs.map((d) => d.ref), ...gs.docs.filter((d) => d.id !== wipeId).map((d) => d.ref)];
+    for (let i = 0; i < refs.length; i += 400) { const b = writeBatch(db); refs.slice(i, i + 400).forEach((r) => b.delete(r)); await b.commit(); }
+    step('⏳ Hesap siliniyor…');
+    const b = writeBatch(db);
+    if (p.nameLower) b.delete(doc(db, 'usernames', p.nameLower));
+    b.delete(doc(db, 'saves', p.id));
+    b.delete(doc(db, 'players', p.id));
+    await b.commit();
+    step('<span class="ok">✔ Silindi</span>');
+    players = players.filter((x) => x.id !== p.id); renderPlayers();
+    setTimeout(() => { $('#dlg-del').close(); $('#dlg-player').close(); toast(`🗑️ ${pname(p)} hesabı silindi${wipeId ? ' · cihaz sıfırlanacak' : ''}`); loadGifts(); }, 700);
+  } catch (e) {
+    step(`<span class="err">Silinemedi: ${esc(e.code || e.message)}</span>`);
+    $('#del-cancel').disabled = false; $('#del-go').disabled = false;
+  }
+};
+
+$('#x-to').oninput = () => {
+  const t = findPlayer($('#x-to').value);
+  xferTarget = t && current && t.id !== current.id ? t : null;
+  $('#x-target').innerHTML = !$('#x-to').value.trim() ? '' : !t ? '<span class="err">Bu ad veya kimlikte oyuncu bulunamadı.</span>'
+    : t.id === current?.id ? '<span class="err">Kaynak ve hedef aynı hesap.</span>'
+    : `Hedef: <b>${esc(pname(t))}</b> · Seviye ${t.level ?? '?'} · Para ${big(t.money)} · Altın ${big(t.gold)} · ${ago(t.lastSeen)} görüldü<br><span class="muted">Kimlik: ${esc(t.id)}</span>`;
+};
+$('#x-go').onclick = async () => {
+  const src = current;
+  if (!src) return;
+  if (!xferSave) { $('#x-msg').innerHTML = '<span class="err">Kaynak hesabın bulut yedeği yok.</span>'; return; }
+  if (!xferTarget) { $('#x-msg').innerHTML = '<span class="err">Önce geçerli bir hedef hesap seç.</span>'; return; }
+  const t = xferTarget;
+  // Önce kaynak oyundan EN GÜNCEL kaydı iste (oyun açıksa birkaç saniyede gelir); gelmezse son yedekle devam edilir
+  $('#x-go').disabled = true;
+  $('#x-msg').innerHTML = '<span class="muted">Kaynak oyundan güncel kayıt isteniyor… (en fazla 20 sn)</span>';
+  const fresh = await freshBackup(src);
+  $('#x-go').disabled = false;
+  const age = Math.max(0, Math.round((Date.now() - ms(xferSave.at)) / 60000));
+  const ageTxt = fresh ? 'Kayıt: ŞİMDİ alındı (kaynak oyun açık) ✔' : `UYARI: Kaynak oyun şu an kapalı. Son yedek ${age} dk önce alınmış; ondan sonra kaynakta yapılanlar aktarılmaz.\n(En güncel hâl için kaynak hesapla oyunu açıp tekrar Aktar'a bas.)`;
+  $('#x-msg').innerHTML = fresh ? '<span class="ok">Güncel kayıt alındı.</span>' : `<span class="err">Kaynak oyun kapalı; son yedek ${age} dk önce.</span>`;
+  $('#x-backup').innerHTML = `Bulut yedeği: <b>${ago(xferSave.at)}</b> · Seviye ${xferSave.level ?? '?'} · ${Math.max(1, Math.round((xferSave.size || 0) / 1024))} KB`;
+  if (!confirm(`HESAP AKTARIMI\n\n${ageTxt}\n\nKaynak: ${pname(src)} (Seviye ${xferSave.level ?? src.level}, ${big(src.money)} para)\nHedef: ${pname(t)} (Seviye ${t.level}, ${big(t.money)} para)\n\n${pname(t)} hesabının mevcut ilerlemesi SİLİNECEK ve yerine ${pname(src)} hesabının verileri gelecek.\nBu işlem geri alınamaz. Devam edilsin mi?`)) return;
+  const moveName = $('#x-name').checked && !!src.name;
+  $('#x-go').disabled = true;
+  try {
+    const by = auth.currentUser.email || auth.currentUser.uid;
+    try { await snapshotPlayer(t, 'Aktarım öncesi (hedef hesap)', false); } catch {}
+    const srcName = src.name, srcLow = src.nameLower || (src.name || '').toLocaleLowerCase('tr-TR'), oldT = pname(t);
+    if (moveName) { // ad, hedefe geçer: hedefin eski adı serbest, kaynak adsız
+      const b = writeBatch(db);
+      if (t.nameLower && t.nameLower !== srcLow) b.delete(doc(db, 'usernames', t.nameLower));
+      b.set(doc(db, 'usernames', srcLow), { uid: t.id, name: srcName, at: serverTimestamp() });
+      b.update(doc(db, 'players', src.id), { name: null, nameLower: null });
+      b.update(doc(db, 'players', t.id), { name: srcName, nameLower: srcLow });
+      await b.commit();
+    }
+    await addDoc(collection(db, 'gifts'), { to: t.id, toName: oldT, kind: 'restore', save: xferSave.data, enc: xferSave.enc || 'json', level: xferSave.level ?? null,
+      ...(moveName ? { name: srcName } : {}), fromUid: src.id, fromName: pname(src), msg: $('#x-msg-in').value.trim().slice(0, 140), createdAt: serverTimestamp(), by });
+    if (moveName) {
+      await addDoc(collection(db, 'gifts'), { to: src.id, toName: srcName, kind: 'rename', name: null, msg: 'Kullanıcı adın başka hesaba aktarıldı', createdAt: serverTimestamp(), by });
+      t.name = srcName; t.nameLower = srcLow; src.name = null; src.nameLower = null; renderPlayers();
+    }
+    $('#x-msg').innerHTML = `<span class="ok">Aktarım gönderildi!${moveName ? ` <b>${esc(srcName)}</b> adı artık ${esc(oldT)} hesabında.` : ''} Hedef oyun açıksa birkaç saniye içinde, kapalıysa açınca uygulanır.</span>`;
+    loadGifts();
+  } catch (e) { $('#x-msg').innerHTML = `<span class="err">Gönderilemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#x-go').disabled = false;
+};
+/** Kısaltmalı kutuların altında girilen değerin açılımı gösterilir (400B = 400.000.000.000). */
+function amtPreview() {
+  for (const el of document.querySelectorAll('[data-amt], #s-level, #s-xp')) {
+    let hint = el.nextElementSibling; if (!hint || !hint.classList.contains('amt-hint')) { hint = document.createElement('div'); hint.className = 'amt-hint muted'; el.after(hint); }
+    const show = () => { const k = el.dataset.k; const v = SIGNED.has(k) ? parseSigned(el.value) : parseAmt(el.value); const cur = el.dataset.cur === undefined || el.dataset.cur === '' ? null : Number(el.dataset.cur);
+      hint.innerHTML = v === null ? '' : Number.isNaN(v) ? '<span class="err">anlaşılamadı</span>'
+        : k ? `${v < 0 ? '−' + nf.format(-v) : '+' + nf.format(v)}${cur !== null ? ` → yeni: <b>${showVal(k, afterVal(k, cur, v, Number(el.dataset.max)))}</b>` : ''}`
+        : `= ${nf.format(v)}${v >= 1e4 ? ' (' + big(v) + ')' : ''}`; };
+    el.oninput = show; show();
+  }
+}
+$('#gift-all').onclick = () => openPlayer(null);
+$('#dp-close').onclick = () => $('#dlg-player').close();
+$('#dp-send').onclick = async () => {
+  const items = {}; for (const k of ['level', 'speed', 'gold', 'money', 'xp', 'logs']) { const v = SIGNED.has(k) ? parseSigned($('#g-' + k).value) : parseAmt($('#g-' + k).value); if (Number.isNaN(v)) { $('#dp-msg').innerHTML = '<span class="err">Miktarı anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v) items[k] = v; }
+  if (items.logs > 50000) { $('#dp-msg').innerHTML = '<span class="err">Kütük en fazla 50.000 eklenebilir (depoya tek tek konuyor).</span>'; return; }
+  if (items.speed && current && current.speed == null) { $('#dp-msg').innerHTML = '<span class="err">Bu oyuncunun hız bilgisi yok; oyunu güncelleyince değiştirebilirsin.</span>'; return; }
+  if (Math.abs(items.level || 0) > 1000) { $('#dp-msg').innerHTML = '<span class="err">Seviye bir seferde en fazla +1000 eklenebilir.</span>'; return; }
+  if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
+  if (!confirm((current ? pname(current) : 'TÜM oyuncular') + ' için:\n' + Object.entries(items).map(([k, v]) => `${({ level: 'Seviye', speed: 'Hareket hızı', gold: 'Altın', money: 'Para', xp: 'XP', logs: 'Kütük' })[k]}: ` + (current && current[k] != null ? `${showVal(k, current[k])} ${v < 0 ? '−' : '+'} ${SIGNED.has(k) ? Math.abs(v) : big(v)} = ${showVal(k, afterVal(k, current[k], v, current.speedMax))}` : `${v < 0 ? '' : '+'}${SIGNED.has(k) ? v : big(v)}`)).join('\n') + '\n\nGönderilsin mi?')) return;
+  if (!Object.keys(items).length) { $('#dp-msg').innerHTML = '<span class="err">En az bir miktar gir.</span>'; return; }
+  const to = current ? current.id : 'all';
+  if (to === 'all' && !confirm('Bu hediye TÜM oyunculara gidecek. Emin misin?')) return;
+  const days = Number($('#g-exp').value);
+  $('#dp-send').disabled = true;
+  try {
+    await addDoc(collection(db, 'gifts'), { to, toName: current ? pname(current) : 'Herkes', items, msg: $('#g-msg').value.trim().slice(0, 140),
+      createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid, ...(days ? { expiresAt: Timestamp.fromMillis(Date.now() + days * 864e5) } : {}) });
+    $('#dp-msg').innerHTML = '<span class="ok">Gönderildi! Oyuncu oyunu açınca (açıksa en geç 5 dakika içinde) alır.</span>';
+    loadGifts();
+  } catch (e) { $('#dp-msg').innerHTML = `<span class="err">Gönderilemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#dp-send').disabled = false;
+};
+
+$('#dp-set').onclick = async () => {
+  if (!current) return;
+  const val = (id) => parseAmt($(id).value);
+  const now = { level: current.level, xp: current.xp, gold: current.gold, money: current.money, speed: current.speed == null ? null : current.speed + 1 };
+  const set = {};
+  for (const k of ['level', 'xp', 'gold', 'money', 'speed']) { const v = val('#s-' + k); if (Number.isNaN(v)) { $('#dp-set-msg').innerHTML = '<span class="err">Değeri anlayamadım. Örnek: 400B, 1,5T, 359AB</span>'; return; } if (v !== null && v !== now[k]) set[k] = v; }
+  if (set.level === 0) set.level = 1;
+  if (set.speed != null) set.speed = Math.max(1, Math.min((current.speedMax ?? SPEED_MAX) + 1, set.speed));
+  if (!Object.keys(set).length) { $('#dp-set-msg').innerHTML = '<span class="err">Değiştirilen bir değer yok.</span>'; return; }
+  const label = { level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hareket hızı (Sv.)' };
+  if (!confirm(`${pname(current)} için:\n` + Object.entries(set).map(([k, v]) => `${label[k]}: ${now[k] == null ? '?' : big(now[k])} → ${big(v)}`).join('\n') + '\n\nKaydedilsin mi?')) return;
+  $('#dp-set').disabled = true;
+  try {
+    await addDoc(collection(db, 'gifts'), { to: current.id, toName: pname(current), kind: 'set', set, msg: $('#s-msg').value.trim().slice(0, 140), createdAt: serverTimestamp(), by: auth.currentUser.email || auth.currentUser.uid });
+    $('#dp-set-msg').innerHTML = '<span class="ok">Kaydedildi! Oyun açıksa birkaç saniye içinde, kapalıysa oyuncu açınca uygulanır. Listede yeni değer oyuncunun bir sonraki eşitlemesinde görünür.</span>';
+    loadGifts();
+  } catch (e) { $('#dp-set-msg').innerHTML = `<span class="err">Kaydedilemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#dp-set').disabled = false;
+};
+
+async function loadGifts() {
+  try {
+    const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
+    const label = { level: 'seviye', speed: 'hız seviyesi', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
+    $('#gift-rows').innerHTML = snap.docs.filter((d) => d.data().kind !== 'backup').map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
+      const what = g.kind === 'reset' ? '<span class="tag on">Sıfırlama</span> ilerleme sıfırlandı (yedekli)' : g.kind === 'restore' && g.backup ? `<span class="tag on">Geri yükleme</span> ${esc(g.backupAt || '')} tarihli yedek` : g.kind === 'wipe' ? '<span class="tag on">Silme</span> hesap silindi, cihaz sıfırlanacak' : g.kind === 'rename' ? `<span class="tag on">Ad</span> ${g.name ? 'yeni ad: ' + esc(g.name) : 'ad kaldırıldı (başka hesaba aktarıldı)'}` : g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
+        : Object.entries(g.items || {}).map(([k, v]) => `${v > 0 ? '+' : ''}${big(v)} ${label[k] || k}`).join(', ');
+      return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
+      <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';
+  } catch (e) { $('#gift-rows').innerHTML = `<tr><td colspan="5" class="err">${esc(e.code || e.message)}</td></tr>`; }
+}
+$('#gift-rows').onclick = async (e) => { const id = e.target.dataset?.del; if (id && confirm('Hediye silinsin mi?')) { await deleteDoc(doc(db, 'gifts', id)); loadGifts(); } };
+document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#t-players').classList.toggle('hide', b.dataset.tab !== 'players'); $('#t-gifts').classList.toggle('hide', b.dataset.tab !== 'gifts');
+  if (b.dataset.tab === 'gifts') loadGifts();
+});
+</script>
+</body>
+</html>
