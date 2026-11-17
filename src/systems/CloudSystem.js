@@ -156,7 +156,7 @@ export class CloudSystem {
     this.status = 'restoring'; // yeniden başlatılana dek eski durum buluta yazılmasın
     await g.save.replaceWith(st);
     const reload = () => location.reload();
-    const m = g.ui.modal(`<div class="giftbox"><div class="gift-ico">🔄</div><h2>Hesabın aktarıldı</h2>
+    const m = g.ui.modal(`<div class="giftbox"><div class="gift-ic">🔄</div><h2>Hesabın aktarıldı</h2>
       ${x.msg ? `<p class="gift-msg">${escHtml(x.msg)}</p>` : ''}<p>Oyun verilerin yönetici tarafından ${x.fromName ? `<b>${escHtml(x.fromName)}</b> hesabından ` : ''}bu hesaba aktarıldı (Seviye ${fmt(st.level)}, ${fmt(st.money || 0)} para).</p>
       <p class="muted">Oyun yeniden başlatılıyor…</p><button class="btn green wide" id="rs-ok">Yeniden başlat</button></div>`, { sticky: true });
     m.close = () => {};
@@ -237,6 +237,7 @@ export class CloudSystem {
       for (const d of list) {
         this.shownGift.add(d.id);
         const x = d.data();
+        if (x.kind === 'wipe') { if (x.to === this.uid) this.applyWipe(d.id); continue; }
         if (x.kind === 'backup') { if (x.to === this.uid) this.applyBackupRequest(d.id); continue; }
         if (x.kind === 'rename') { if (x.to === this.uid) this.applyRename(d.id, x); continue; }
         if (x.kind === 'restore') { if (x.to === this.uid && x.save) this.applyRestore(d.id, x); continue; }
@@ -251,6 +252,21 @@ export class CloudSystem {
    *  Önce "alındı" kaydı yazılır → aynı düzenleme ikinci kez uygulanmaz. */
   /** Yönetici kullanıcı adını değiştirdi (veya hesap aktarımında ad başka hesaba geçti → ad boşalır, yenisi sorulur). */
   /** Yönetici hesap aktarımından önce en güncel kaydı istedi: hemen yedekle (oyuncuya bir şey gösterilmez). */
+  /** Yönetici hesabı sildi ve cihazdaki oyunun da sıfırlanmasını istedi: kayıt silinir, oyun baştan başlar. */
+  async applyWipe(id) {
+    const F = this.F; const g = this.game;
+    try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }
+    catch (e) { console.warn('[Bulut] silme kaydı', e?.code || e); return; }
+    this.status = 'deleted';
+    g.save.locked = true; g.ready = false;
+    await g.save.reset();
+    const m = g.ui.modal(`<div class="giftbox"><div class="gift-ic">🗑️</div><h2>Hesabın silindi</h2><p>Hesabın ve oyun ilerlemen yönetici tarafından silindi. Oyun baştan başlayacak.</p><button class="btn green wide" id="wp-ok">Tamam</button></div>`, { sticky: true });
+    m.close = () => {};
+    const reload = () => location.reload();
+    m.querySelector('#wp-ok').addEventListener('click', reload);
+    setTimeout(reload, 8000);
+  }
+
   async applyBackupRequest(id) {
     const F = this.F;
     try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); } catch {}

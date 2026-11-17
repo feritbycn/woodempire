@@ -34,6 +34,30 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
   .addgrid .ah{font-size:12px;opacity:.7;font-weight:700}
   .addgrid .an,.addgrid .ac{padding-top:9px;white-space:nowrap}
   .addgrid .ac b{font-size:16px}
+  /* --- Tehlikeli bölge + silme penceresi --- */
+  .danger-zone{margin-top:18px;border:1.5px solid color-mix(in srgb,var(--red) 45%,transparent);border-radius:14px;padding:12px 14px;background:color-mix(in srgb,var(--red) 6%,var(--card));display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .danger-zone b{color:var(--red)}.danger-zone p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+  #dlg-del{max-width:440px;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+  #dlg-del[open]{animation:delIn .22s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes delIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+  .del-head{background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;padding:22px 20px 18px;text-align:center}
+  .del-ico{width:58px;height:58px;margin:0 auto 8px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:30px;box-shadow:0 0 0 8px rgba(255,255,255,.08)}
+  .del-head h2{margin:0;font-size:20px}.del-head p{margin:4px 0 0;font-size:13px;opacity:.9}
+  .del-body{padding:16px 20px 20px}
+  .del-who{display:flex;gap:12px;align-items:center;background:var(--chip);border-radius:12px;padding:10px 12px}
+  .del-av{width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;flex:0 0 auto}
+  .del-who .n{font-weight:800}.del-who .m{font-size:12px;color:var(--muted)}
+  .del-list{list-style:none;padding:0;margin:12px 0;font-size:14px}.del-list li{padding:4px 0 4px 26px;position:relative}
+  .del-list li::before{content:'✕';position:absolute;left:4px;color:var(--red);font-weight:800}
+  .del-opt{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb,var(--gold) 12%,var(--card));border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);border-radius:12px;padding:10px 12px;font-size:13px;cursor:pointer}
+  .del-opt input{width:auto;margin-top:2px;accent-color:var(--red)}
+  .del-warn{margin:12px 0 6px;font-size:13px;font-weight:700;color:var(--red)}
+  #del-confirm{font-weight:700;letter-spacing:.3px}#del-confirm.match{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 20%,transparent)}
+  .del-btns{display:flex;gap:10px;margin-top:14px}.del-btns button{flex:1;padding:12px}
+  #del-go{background:var(--red);transition:transform .1s}#del-go:not(:disabled):active{transform:scale(.97)}
+  .del-steps{font-size:13px;margin-top:10px;min-height:18px}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,40px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;transition:.25s;z-index:99;pointer-events:none;max-width:calc(100% - 32px)}
+  #toast.show{transform:translate(-50%,0);opacity:1}
 </style>
 </head>
 <body>
@@ -113,7 +137,29 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <p id="x-msg"></p>
   </details>
 
+  <div class="danger-zone" id="dp-danger">
+    <div><b>⚠️ Tehlikeli bölge</b><p>Hesabı ve tüm bulut verilerini kalıcı olarak siler.</p></div>
+    <button class="danger" id="dp-del">🗑️ Hesabı sil</button>
+  </div>
 </div></dialog>
+<dialog id="dlg-del">
+  <div class="del-head"><div class="del-ico">🗑️</div><h2>Hesap kalıcı olarak silinsin mi?</h2><p>Bu işlem <b>geri alınamaz</b>.</p></div>
+  <div class="del-body">
+    <div class="del-who"><div class="del-av" id="del-av">?</div><div><div class="n" id="del-name"></div><div class="m" id="del-meta"></div></div></div>
+    <ul class="del-list">
+      <li>Oyuncu özeti ve istatistikleri</li>
+      <li>Oyun kaydının bulut yedeği</li>
+      <li>Kullanıcı adı (serbest kalır, başkası alabilir)</li>
+      <li>Bekleyen hediyeleri ve hediye geçmişi</li>
+    </ul>
+    <label class="del-opt"><input type="checkbox" id="del-wipe" checked><span><b>Cihazdaki oyunu da sıfırla.</b> Oyun açıksa hemen, kapalıysa açılınca oyuncunun telefonundaki ilerlemesi silinir ve oyun baştan başlar. İşaretlemezsen oyuncu oynamaya devam edince hesap yeniden oluşur.</span></label>
+    <div class="del-warn" id="del-warn"></div>
+    <input id="del-confirm" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="del-steps" id="del-steps"></div>
+    <div class="del-btns"><button class="ghost" id="del-cancel">Vazgeç</button><button id="del-go" disabled>Kalıcı olarak sil</button></div>
+  </div>
+</dialog>
+<div id="toast"></div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
@@ -226,7 +272,7 @@ function openPlayer(p) {
   $('#dp-set-wrap').classList.toggle('hide', !p);
   if (p) { for (const k of ['level', 'xp', 'gold', 'money', 'speed']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : k === 'speed' ? (p.speed == null ? '?' : p.speed + 1) : big(p[k])); } $('#s-msg').value = ''; }
   amtPreview();
-  $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false;
+  $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false; $('#dp-danger').classList.toggle('hide', !p);
   if (p) xferInit(p);
   $('#dp-rename').classList.toggle('hide', !p); $('#dp-rename').open = false;
   if (p) { $('#r-cur').textContent = p.name || '(yok)'; $('#r-name').value = ''; $('#r-msg').textContent = ''; }
@@ -289,6 +335,49 @@ $('#r-go').onclick = async () => {
     $('#r-msg').innerHTML = '<span class="ok">Ad değiştirildi. Oyun açıksa hemen, kapalıysa açınca görünür.</span>';
   } catch (e) { $('#r-msg').innerHTML = `<span class="err">Değiştirilemedi: ${esc(e.code || e.message)}</span> (Firestore kurallarını güncelledin mi?)`; }
   $('#r-go').disabled = false;
+};
+
+// ---------- HESAP SİLME ----------
+let toastT; function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 3200); }
+let delWord = '';
+$('#dp-del').onclick = () => {
+  const p = current; if (!p) return;
+  delWord = p.name || 'SİL';
+  $('#del-av').textContent = (p.name || '?').slice(0, 1).toLocaleUpperCase('tr-TR');
+  $('#del-name').textContent = pname(p);
+  $('#del-meta').textContent = `Seviye ${p.level ?? '?'} · ${big(p.money)} para · ${big(p.gold)} altın · ${ago(p.lastSeen)} görüldü`;
+  $('#del-warn').innerHTML = `Onaylamak için <u>${esc(delWord)}</u> yaz:`;
+  $('#del-confirm').value = ''; $('#del-confirm').placeholder = delWord; $('#del-confirm').classList.remove('match');
+  $('#del-wipe').checked = true; $('#del-steps').textContent = ''; $('#del-go').disabled = true; $('#del-cancel').disabled = false;
+  $('#dlg-del').showModal(); setTimeout(() => $('#del-confirm').focus(), 50);
+};
+$('#del-confirm').oninput = () => { const ok = $('#del-confirm').value.trim() === delWord; $('#del-go').disabled = !ok; $('#del-confirm').classList.toggle('match', ok); };
+$('#del-cancel').onclick = () => $('#dlg-del').close();
+$('#dlg-del').addEventListener('cancel', (e) => { if ($('#del-cancel').disabled) e.preventDefault(); });
+$('#del-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const by = auth.currentUser.email || auth.currentUser.uid, step = (t) => { $('#del-steps').innerHTML = t; };
+  $('#del-go').disabled = true; $('#del-cancel').disabled = true;
+  try {
+    let wipeId = null;
+    if ($('#del-wipe').checked) { step('⏳ Cihaza sıfırlama komutu gönderiliyor…'); wipeId = (await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'wipe', createdAt: serverTimestamp(), by })).id; }
+    step('⏳ Hediyeler ve geçmiş siliniyor…');
+    const [cl, gs] = await Promise.all([getDocs(collection(db, 'players', p.id, 'claimed')), getDocs(query(collection(db, 'gifts'), where('to', '==', p.id)))]);
+    const refs = [...cl.docs.map((d) => d.ref), ...gs.docs.filter((d) => d.id !== wipeId).map((d) => d.ref)];
+    for (let i = 0; i < refs.length; i += 400) { const b = writeBatch(db); refs.slice(i, i + 400).forEach((r) => b.delete(r)); await b.commit(); }
+    step('⏳ Hesap siliniyor…');
+    const b = writeBatch(db);
+    if (p.nameLower) b.delete(doc(db, 'usernames', p.nameLower));
+    b.delete(doc(db, 'saves', p.id));
+    b.delete(doc(db, 'players', p.id));
+    await b.commit();
+    step('<span class="ok">✔ Silindi</span>');
+    players = players.filter((x) => x.id !== p.id); renderPlayers();
+    setTimeout(() => { $('#dlg-del').close(); $('#dlg-player').close(); toast(`🗑️ ${pname(p)} hesabı silindi${wipeId ? ' · cihaz sıfırlanacak' : ''}`); loadGifts(); }, 700);
+  } catch (e) {
+    step(`<span class="err">Silinemedi: ${esc(e.code || e.message)}</span>`);
+    $('#del-cancel').disabled = false; $('#del-go').disabled = false;
+  }
 };
 
 $('#x-to').oninput = () => {
@@ -397,7 +486,7 @@ async function loadGifts() {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
     const label = { level: 'seviye', speed: 'hız seviyesi', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
     $('#gift-rows').innerHTML = snap.docs.filter((d) => d.data().kind !== 'backup').map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
-      const what = g.kind === 'rename' ? `<span class="tag on">Ad</span> ${g.name ? 'yeni ad: ' + esc(g.name) : 'ad kaldırıldı (başka hesaba aktarıldı)'}` : g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
+      const what = g.kind === 'wipe' ? '<span class="tag on">Silme</span> hesap silindi, cihaz sıfırlanacak' : g.kind === 'rename' ? `<span class="tag on">Ad</span> ${g.name ? 'yeni ad: ' + esc(g.name) : 'ad kaldırıldı (başka hesaba aktarıldı)'}` : g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
         : Object.entries(g.items || {}).map(([k, v]) => `${v > 0 ? '+' : ''}${big(v)} ${label[k] || k}`).join(', ');
       return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
       <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';
