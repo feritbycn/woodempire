@@ -9,6 +9,7 @@ rules_version = '2';
 //   gifts/{id}                     hediyeler: yalnızca yönetici yazar; alıcısı (veya herkes için olanı) okur
 //   saves/{uid}                    tam oyun kaydının yedeği (hesap aktarımı için): yalnızca sahibi yazar; sahibi ve yönetici okur
 //   bans/{uid}                     askıya alma: yalnızca yönetici yazar; oyuncunun kendisi okur
+//   backups/{id}                   yönetici yedekleri (sıfırlama/aktarım/silme öncesi): yalnızca yönetici
 //   admins/{uid}                   yöneticiler: konsoldan elle eklenir, oyundan/panelden yazılamaz
 service cloud.firestore {
   match /databases/{db}/documents {
@@ -56,6 +57,10 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['data', 'enc', 'size', 'level', 'at'])
         && request.resource.data.data is string && request.resource.data.data.size() < 1000000;
       allow delete: if isMe(uid) || isAdmin();
+    }
+
+    match /backups/{id} {
+      allow read, write: if isAdmin();
     }
 
     match /bans/{uid} {

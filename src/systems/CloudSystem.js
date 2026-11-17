@@ -161,8 +161,8 @@ export class CloudSystem {
     this.status = 'restoring'; // yeniden başlatılana dek eski durum buluta yazılmasın
     await g.save.replaceWith(st);
     const reload = () => location.reload();
-    const m = g.ui.modal(`<div class="giftbox"><div class="gift-ic">🔄</div><h2>Hesabın aktarıldı</h2>
-      ${x.msg ? `<p class="gift-msg">${escHtml(x.msg)}</p>` : ''}<p>Oyun verilerin yönetici tarafından ${x.fromName ? `<b>${escHtml(x.fromName)}</b> hesabından ` : ''}bu hesaba aktarıldı (Seviye ${fmt(st.level)}, ${fmt(st.money || 0)} para).</p>
+    const m = g.ui.modal(`<div class="giftbox"><div class="gift-ic">🔄</div><h2>${x.backup ? 'Hesabın geri yüklendi' : 'Hesabın aktarıldı'}</h2>
+      ${x.msg ? `<p class="gift-msg">${escHtml(x.msg)}</p>` : ''}<p>${x.backup ? `Oyun verilerin yönetici tarafından ${x.backupAt ? `<b>${escHtml(x.backupAt)}</b> tarihli ` : ''}yedekten geri yüklendi` : `Oyun verilerin yönetici tarafından ${x.fromName ? `<b>${escHtml(x.fromName)}</b> hesabından ` : ''}bu hesaba aktarıldı`} (Seviye ${fmt(st.level)}, ${fmt(st.money || 0)} para).</p>
       <p class="muted">Oyun yeniden başlatılıyor…</p><button class="btn green wide" id="rs-ok">Yeniden başlat</button></div>`, { sticky: true });
     m.close = () => {};
     m.querySelector('#rs-ok').addEventListener('click', reload);
@@ -243,6 +243,7 @@ export class CloudSystem {
       for (const d of list) {
         this.shownGift.add(d.id);
         const x = d.data();
+        if (x.kind === 'reset') { if (x.to === this.uid) this.applyReset(d.id, x); continue; }
         if (x.kind === 'wipe') { if (x.to === this.uid) this.applyWipe(d.id); continue; }
         if (x.kind === 'backup') { if (x.to === this.uid) this.applyBackupRequest(d.id); continue; }
         if (x.kind === 'rename') { if (x.to === this.uid) this.applyRename(d.id, x); continue; }
@@ -310,6 +311,20 @@ export class CloudSystem {
   }
 
   /** Yönetici hesabı sildi ve cihazdaki oyunun da sıfırlanmasını istedi: kayıt silinir, oyun baştan başlar. */
+  /** Yönetici ilerlemeyi sıfırladı (öncesinde panelde yedek alındı): kayıt silinir, oyun baştan başlar; hesap ve ad kalır. */
+  async applyReset(id, x) {
+    const F = this.F; const g = this.game;
+    try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }
+    catch (e) { console.warn('[Bulut] sıfırlama kaydı', e?.code || e); return; }
+    g.save.locked = true; g.ready = false;
+    await g.save.reset();
+    const m = g.ui.modal(`<div class="giftbox"><div class="gift-ic">♻️</div><h2>İlerlemen sıfırlandı</h2>${x.msg ? `<p class="gift-msg">${escHtml(x.msg)}</p>` : ''}<p>Oyun ilerlemen yönetici tarafından sıfırlandı. Oyun baştan başlayacak; kullanıcı adın aynı kalır.</p><button class="btn green wide" id="rs-ok">Tamam</button></div>`, { sticky: true });
+    m.close = () => {};
+    const reload = () => location.reload();
+    m.querySelector('#rs-ok').addEventListener('click', reload);
+    setTimeout(reload, 8000);
+  }
+
   async applyWipe(id) {
     const F = this.F; const g = this.game;
     try { await F.setDoc(F.doc(this.db, 'players', this.uid, 'claimed', id), { at: F.serverTimestamp() }); }

@@ -65,6 +65,9 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
   #dlg-ask[open]{animation:delIn .22s cubic-bezier(.2,.9,.3,1.2)}
   #dlg-ask .del-head.green{background:linear-gradient(135deg,#43a047,#2e7d32)}#dlg-ask .del-head.amber{background:linear-gradient(135deg,#fb8c00,#c62828)}
   #ask-ok.green{background:var(--green2)}#ask-ok.red{background:var(--red)}
+  .bk{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 0;flex-wrap:wrap}
+  .bk .t{font-size:14px}.bk .t small{display:block;color:var(--muted);font-size:12px}.bk .b{display:flex;gap:6px}.bk button{padding:7px 10px;font-size:13px}
+  .bk .why{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:4px}
 </style>
 </head>
 <body>
@@ -144,6 +147,28 @@ dialog{border:0;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 2
     <p id="x-msg"></p>
   </details>
 
+  <details id="dp-reset" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">♻️ İlerlemeyi sıfırla (yedekli)</summary>
+    <div class="dur" id="rs-mode" style="margin-top:10px"><button data-m="full" class="on">Tamamen sıfırla</button><button data-m="values">Seviye / para düşür</button></div>
+    <p class="muted" id="rs-full-info" style="margin:0">Oyun <b>en baştan</b> başlar: alanlar, işçiler, makineler, para, altın, seviye… hepsi sıfırlanır. Hesap ve kullanıcı adı kalır.</p>
+    <div id="rs-values" class="hide">
+      <div class="row"><div><label>Yeni seviye</label><input type="number" min="1" id="rs-level" placeholder="ör. 10"></div><div></div></div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:14px">
+        <label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="rs-money" style="width:auto"> Parayı sıfırla</label>
+        <label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="rs-gold" style="width:auto"> Altını sıfırla</label>
+        <label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="rs-xp" checked style="width:auto"> XP'yi sıfırla</label>
+      </div>
+      <p class="muted" style="margin:6px 0 0">Alanlar, işçiler ve makineler olduğu gibi kalır; yalnızca seçtiğin değerler değişir.</p>
+    </div>
+    <div style="margin-top:8px"><label>Sebep / not (oyuncuya gösterilir)</label><input id="rs-note" maxlength="140" placeholder="ör. Hatalı kazanç düzeltildi"></div>
+    <p class="muted" style="margin:8px 0 0">💾 Sıfırlamadan önce oyuncunun <b>o anki tüm verisi yedeklenir</b>. Aşağıdaki <b>Yedekler</b> bölümünden istediğin zaman geri yükleyebilirsin.</p>
+    <div class="row" style="margin-top:10px"><div></div><div style="flex:0 0 auto"><button class="danger" id="rs-go">♻️ Yedekle ve sıfırla</button></div></div>
+    <p id="rs-out"></p>
+  </details>
+  <details id="dp-backups" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">🗂️ Yedekler <span class="tag" id="bk-count">…</span></summary>
+    <div id="bk-list" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:6px"><div class="muted">Sıfırlama, aktarım, silme ve geri yükleme öncesinde otomatik yedek alınır.</div><div style="flex:0 0 auto"><button class="ghost" id="bk-now">📸 Şimdi yedek al</button></div></div>
+    <p id="bk-out"></p>
+  </details>
   <details id="dp-ban" style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">⛔ Hesabı askıya al</summary>
     <div id="ban-state"></div>
     <div id="ban-form">
@@ -301,6 +326,8 @@ function openPlayer(p) {
   if (p) { for (const k of ['level', 'xp', 'gold', 'money', 'speed']) { $('#s-' + k).value = ''; $('#s-' + k).placeholder = 'şu an ' + (k === 'level' ? (p.level ?? '?') : k === 'speed' ? (p.speed == null ? '?' : p.speed + 1) : big(p[k])); } $('#s-msg').value = ''; }
   amtPreview();
   $('#dp-xfer').classList.toggle('hide', !p); $('#dp-xfer').open = false; $('#dp-danger').classList.toggle('hide', !p);
+  for (const id of ['#dp-reset', '#dp-backups']) { $(id).classList.toggle('hide', !p); $(id).open = false; }
+  if (p) { $('#rs-out').textContent = ''; $('#rs-note').value = ''; $('#rs-level').value = ''; $('#bk-out').textContent = ''; loadBackups(p); }
   $('#dp-ban').classList.toggle('hide', !p); if (p) { $('#dp-ban').open = !!banOf(p.id); banRender(p); }
   if (p) xferInit(p);
   $('#dp-rename').classList.toggle('hide', !p); $('#dp-rename').open = false;
@@ -378,6 +405,108 @@ function ask({ icon, title, sub = '', body = '', ok, tone = 'red' }) {
   });
 }
 
+// ---------- YEDEKLER ----------
+const byMe = () => auth.currentUser.email || auth.currentUser.uid;
+/** Oyuncudan anlık kayıt ister (oyun açıksa birkaç sn'de gelir). Gelirse yeni kaydı, gelmezse null döner. */
+async function requestFresh(p, prevAt) {
+  try { await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'backup', createdAt: serverTimestamp(), by: byMe() }); } catch { return null; }
+  for (let i = 0; i < 8; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try { const sn = await getDoc(doc(db, 'saves', p.id)); if (sn.exists() && ms(sn.data().at) > prevAt) return sn.data(); } catch {}
+  }
+  return null;
+}
+/** Oyuncunun kaydını backups/ altına kopyalar. {id, fresh, ageMin} ya da yedek yoksa null. */
+async function snapshotPlayer(p, reason, fresh = true) {
+  let cur = null;
+  try { const sn = await getDoc(doc(db, 'saves', p.id)); cur = sn.exists() ? sn.data() : null; } catch {}
+  let isFresh = false;
+  if (fresh) { const f = await requestFresh(p, ms(cur?.at)); if (f) { cur = f; isFresh = true; } }
+  if (!cur?.data) return null;
+  const ref = await addDoc(collection(db, 'backups'), { uid: p.id, name: pname(p), data: cur.data, enc: cur.enc || 'json', size: cur.size || cur.data.length,
+    level: cur.level ?? p.level ?? null, money: p.money ?? null, gold: p.gold ?? null, reason, saveAt: cur.at || null, at: serverTimestamp(), by: byMe() });
+  return { id: ref.id, fresh: isFresh, ageMin: Math.round((Date.now() - ms(cur.at)) / 6e4) };
+}
+let backups = [];
+async function loadBackups(p) {
+  $('#bk-count').textContent = '…'; $('#bk-list').innerHTML = '<p class="muted">Yükleniyor…</p>';
+  try {
+    const sn = await getDocs(query(collection(db, 'backups'), where('uid', '==', p.id)));
+    if (current !== p) return;
+    backups = sn.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ms(b.at) - ms(a.at));
+  } catch (e) { $('#bk-list').innerHTML = `<p class="err">Yedekler okunamadı: ${esc(e.code || e.message)} (Firestore kurallarını güncelledin mi?)</p>`; $('#bk-count').textContent = '?'; return; }
+  $('#bk-count').textContent = backups.length;
+  $('#bk-list').innerHTML = backups.length ? backups.map((b) => `<div class="bk"><div class="t"><b>${dt(b.at)}</b><span class="why">${esc(b.reason || 'Elle')}</span>
+      <small>Seviye ${b.level ?? '?'} · ${big(b.money)} para · ${big(b.gold)} altın · ${Math.max(1, Math.round((b.size || 0) / 1024))} KB</small></div>
+      <div class="b"><button data-r="${b.id}">↩️ Geri yükle</button><button class="ghost" data-d="${b.id}">Sil</button></div></div>`).join('')
+    : '<p class="muted">Bu oyuncunun henüz yedeği yok.</p>';
+}
+$('#bk-list').onclick = async (e) => {
+  const p = current; if (!p) return;
+  const r = e.target.closest('[data-r]'), d = e.target.closest('[data-d]');
+  if (r) {
+    const b = backups.find((x) => x.id === r.dataset.r); if (!b) return;
+    if (!(await ask({ icon: '↩️', tone: 'green', ok: 'Geri yükle', title: 'Yedek geri yüklensin mi?', sub: `${esc(pname(p))} · ${dt(b.at)}`,
+      body: `<div class="ban-box" style="background:var(--chip);border-color:var(--line)">Yedek: <b>Seviye ${b.level ?? '?'}</b> · ${big(b.money)} para · ${big(b.gold)} altın<br><span class="muted">${esc(b.reason || '')}</span></div>
+        <p class="muted" style="margin:8px 0 0">Oyuncunun şu anki ilerlemesi bu yedekle değiştirilir. Şu anki hâli de önce yedeklenir, yani bu işlem de geri alınabilir. Oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır.</p>` }))) return;
+    $('#bk-out').innerHTML = '<span class="muted">⏳ Şu anki hâl yedekleniyor…</span>';
+    try {
+      await snapshotPlayer(p, 'Geri yükleme öncesi');
+      await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'restore', backup: true, backupAt: dt(b.at), save: b.data, enc: b.enc || 'json', level: b.level ?? null,
+        fromUid: p.id, fromName: 'Yedek ' + dt(b.at), msg: '', createdAt: serverTimestamp(), by: byMe() });
+      $('#bk-out').innerHTML = '<span class="ok">Geri yükleme gönderildi. Oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır.</span>';
+      toast(`↩️ ${pname(p)}: yedek geri yükleniyor`); loadBackups(p);
+    } catch (e2) { $('#bk-out').innerHTML = `<span class="err">Geri yüklenemedi: ${esc(e2.code || e2.message)}</span>`; }
+  }
+  if (d) {
+    const b = backups.find((x) => x.id === d.dataset.d); if (!b) return;
+    if (!(await ask({ icon: '🗑️', ok: 'Yedeği sil', title: 'Yedek silinsin mi?', sub: dt(b.at), body: '<p style="margin:0">Bu yedek kalıcı olarak silinir, bir daha geri yüklenemez.</p>' }))) return;
+    try { await deleteDoc(doc(db, 'backups', b.id)); toast('Yedek silindi'); loadBackups(p); } catch (e2) { $('#bk-out').innerHTML = `<span class="err">Silinemedi: ${esc(e2.code || e2.message)}</span>`; }
+  }
+};
+$('#bk-now').onclick = async () => {
+  const p = current; if (!p) return;
+  $('#bk-now').disabled = true; $('#bk-out').innerHTML = '<span class="muted">⏳ Oyuncudan güncel kayıt isteniyor… (en fazla 16 sn)</span>';
+  try {
+    const r = await snapshotPlayer(p, 'Elle alınan yedek');
+    $('#bk-out').innerHTML = !r ? '<span class="err">Bu oyuncunun bulut kaydı yok (oyunun yeni sürümünü açmamış).</span>'
+      : r.fresh ? '<span class="ok">✔ Güncel yedek alındı.</span>' : `<span class="ok">✔ Yedek alındı.</span> <span class="muted">Oyuncu çevrimdışı; son kaydı (${r.ageMin} dk önce) yedeklendi.</span>`;
+    loadBackups(p);
+  } catch (e) { $('#bk-out').innerHTML = `<span class="err">Yedeklenemedi: ${esc(e.code || e.message)}</span>`; }
+  $('#bk-now').disabled = false;
+};
+
+// ---------- YEDEKLİ SIFIRLAMA ----------
+let rsMode = 'full';
+$('#rs-mode').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; rsMode = b.dataset.m; $('#rs-mode').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+  $('#rs-full-info').classList.toggle('hide', rsMode !== 'full'); $('#rs-values').classList.toggle('hide', rsMode === 'full'); };
+$('#rs-go').onclick = async () => {
+  const p = current; if (!p) return;
+  const note = $('#rs-note').value.trim().slice(0, 140);
+  let set = null;
+  if (rsMode === 'values') {
+    set = {};
+    const lv = parseInt($('#rs-level').value, 10); if (lv >= 1) set.level = lv;
+    if ($('#rs-money').checked) set.money = 0; if ($('#rs-gold').checked) set.gold = 0; if ($('#rs-xp').checked) set.xp = 0;
+    if (!Object.keys(set).length) { $('#rs-out').innerHTML = '<span class="err">Yeni seviye yaz ya da en az bir değeri seç.</span>'; return; }
+  }
+  const what = set ? Object.entries(set).map(([k, v]) => `<li>${({ level: 'Seviye', money: 'Para', gold: 'Altın', xp: 'XP' })[k]}: ${k === 'level' ? (p.level ?? '?') : big(p[k])} → <b>${big(v)}</b></li>`).join('')
+    : '<li>Seviye, para, altın, XP</li><li>Alanlar, işçiler, makineler, hayvanlar</li><li>Yükseltmeler ve görevler</li>';
+  if (!(await ask({ icon: '♻️', tone: 'amber', ok: 'Yedekle ve sıfırla', title: set ? 'Değerler düşürülsün mü?' : 'İlerleme sıfırlansın mı?', sub: `${esc(pname(p))} · Seviye ${p.level ?? '?'} · ${big(p.money)} para`,
+    body: `<ul class="del-list" style="margin-top:0">${what}</ul><div class="ban-box" style="background:color-mix(in srgb,var(--green2) 10%,var(--card));border-color:color-mix(in srgb,var(--green2) 40%,transparent)">💾 Önce şu anki tüm verisi <b>yedeklenecek</b>; Yedekler bölümünden geri yükleyebilirsin.</div>` }))) return;
+  $('#rs-go').disabled = true;
+  try {
+    $('#rs-out').innerHTML = '<span class="muted">⏳ Yedek alınıyor… (oyuncu çevrimiçiyse güncel kayıt istenir)</span>';
+    const r = await snapshotPlayer(p, set ? 'Değer düşürme öncesi' : 'Sıfırlama öncesi');
+    if (!r && !(await ask({ icon: '⚠️', tone: 'amber', ok: 'Yine de sıfırla', title: 'Yedek alınamadı', sub: esc(pname(p)), body: '<p style="margin:0">Bu oyuncunun bulut kaydı yok (oyunun yeni sürümünü açmamış). Devam edersen <b>geri alınamaz</b>.</p>' }))) { $('#rs-out').textContent = ''; $('#rs-go').disabled = false; return; }
+    if (set) await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'set', set, msg: note, createdAt: serverTimestamp(), by: byMe() });
+    else await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'reset', msg: note, createdAt: serverTimestamp(), by: byMe() });
+    $('#rs-out').innerHTML = `<span class="ok">✔ ${r ? (r.fresh ? 'Güncel yedek alındı' : `Yedek alındı (son kayıt ${r.ageMin} dk önce)`) + ' ve ' : ''}${set ? 'değerler gönderildi' : 'sıfırlama gönderildi'}. Oyun açıksa birkaç saniyede, kapalıysa açınca uygulanır.</span>`;
+    toast(`♻️ ${pname(p)} ${set ? 'değerleri düşürüldü' : 'sıfırlandı'} (yedekli)`); loadBackups(p); loadGifts();
+  } catch (e) { $('#rs-out').innerHTML = `<span class="err">Yapılamadı: ${esc(e.code || e.message)} (Firestore kurallarını güncelledin mi?)</span>`; }
+  $('#rs-go').disabled = false;
+};
+
 // ---------- ASKIYA ALMA ----------
 let banHours = 24;
 const durTxt = (h) => !h ? 'Süresiz' : h < 24 ? `${h} saat` : `${h / 24} gün`;
@@ -439,6 +568,8 @@ $('#del-go').onclick = async () => {
   const by = auth.currentUser.email || auth.currentUser.uid, step = (t) => { $('#del-steps').innerHTML = t; };
   $('#del-go').disabled = true; $('#del-cancel').disabled = true;
   try {
+    step('⏳ Silmeden önce yedek alınıyor…');
+    try { await snapshotPlayer(p, 'Silme öncesi', false); } catch {}
     let wipeId = null;
     if ($('#del-wipe').checked) { step('⏳ Cihaza sıfırlama komutu gönderiliyor…'); wipeId = (await addDoc(collection(db, 'gifts'), { to: p.id, toName: pname(p), kind: 'wipe', createdAt: serverTimestamp(), by })).id; }
     step('⏳ Hediyeler ve geçmiş siliniyor…');
@@ -487,6 +618,7 @@ $('#x-go').onclick = async () => {
   $('#x-go').disabled = true;
   try {
     const by = auth.currentUser.email || auth.currentUser.uid;
+    try { await snapshotPlayer(t, 'Aktarım öncesi (hedef hesap)', false); } catch {}
     const srcName = src.name, srcLow = src.nameLower || (src.name || '').toLocaleLowerCase('tr-TR'), oldT = pname(t);
     if (moveName) { // ad, hedefe geçer: hedefin eski adı serbest, kaynak adsız
       const b = writeBatch(db);
@@ -566,7 +698,7 @@ async function loadGifts() {
     const snap = await getDocs(query(collection(db, 'gifts'), orderBy('createdAt', 'desc'), limit(200)));
     const label = { level: 'seviye', speed: 'hız seviyesi', gold: 'altın', money: 'para', xp: 'XP', logs: 'kütük' };
     $('#gift-rows').innerHTML = snap.docs.filter((d) => d.data().kind !== 'backup').map((d) => { const g = d.data(); const exp = ms(g.expiresAt) && ms(g.expiresAt) < Date.now();
-      const what = g.kind === 'wipe' ? '<span class="tag on">Silme</span> hesap silindi, cihaz sıfırlanacak' : g.kind === 'rename' ? `<span class="tag on">Ad</span> ${g.name ? 'yeni ad: ' + esc(g.name) : 'ad kaldırıldı (başka hesaba aktarıldı)'}` : g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
+      const what = g.kind === 'reset' ? '<span class="tag on">Sıfırlama</span> ilerleme sıfırlandı (yedekli)' : g.kind === 'restore' && g.backup ? `<span class="tag on">Geri yükleme</span> ${esc(g.backupAt || '')} tarihli yedek` : g.kind === 'wipe' ? '<span class="tag on">Silme</span> hesap silindi, cihaz sıfırlanacak' : g.kind === 'rename' ? `<span class="tag on">Ad</span> ${g.name ? 'yeni ad: ' + esc(g.name) : 'ad kaldırıldı (başka hesaba aktarıldı)'}` : g.kind === 'restore' ? `<span class="tag on">Hesap aktarımı</span> ${esc(g.fromName || g.fromUid || '?')} → ${esc(g.toName || g.to)}${g.level ? ' (Sv.' + g.level + ')' : ''}` : g.kind === 'set' ? '<span class="tag on">Düzenleme</span> ' + Object.entries(g.set || {}).map(([k, v]) => `${({ level: 'Seviye', xp: 'XP', gold: 'Altın', money: 'Para', speed: 'Hız Sv.' })[k] || k} = ${big(v)}`).join(', ')
         : Object.entries(g.items || {}).map(([k, v]) => `${v > 0 ? '+' : ''}${big(v)} ${label[k] || k}`).join(', ');
       return `<tr><td>${dt(g.createdAt)}</td><td>${esc(g.toName || g.to)}</td><td>${what}</td>
       <td>${esc(g.msg || '')}${exp ? ' <span class="tag">süresi doldu</span>' : ''}</td><td><button class="ghost" data-del="${d.id}">Sil</button></td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Henüz hediye yok</td></tr>';
