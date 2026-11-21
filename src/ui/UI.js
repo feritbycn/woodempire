@@ -12,6 +12,12 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
 /** Oyun arayüzü: HUD, joystick, eylem düğmeleri, alt menü, bildirimler, modallar */
+/** Uzakta geçen süre: "2 gün 3 sa", "5 sa 12 dk", "14 dk" */
+function awayText(sec) {
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+  return d ? `${d} gün${h ? ` ${h} sa` : ''}` : h ? `${h} sa${m ? ` ${m} dk` : ''}` : `${m} dk`;
+}
+
 export class UI {
   constructor(game, root) {
     this.game = game;
@@ -474,7 +480,7 @@ export class UI {
     if (!this.resumeWatched) { this.resumeWatched = true; this.watchResume(); }
     if (g.fresh) steps.push(() => this.welcome());
     const off = this.offlineCalc(offlineSec);
-    if (off) steps.push(() => this.offline(off.amount, off.sec, off.xp));
+    if (off) steps.push(() => this.offline(off.amount, off.sec, off.xp, off.away));
     if (!g.fresh && g.daily.canClaimLogin()) steps.push(() => this.panels.dailyLogin());
     // modallar sırayla gösterilir: biri kapanınca sonraki açılır
     const run = () => { const s = steps.shift(); if (!s) return; const m = s(); if (m) { const orig = m.close; m.close = () => { orig(); setTimeout(run, 300); }; } };
@@ -492,7 +498,7 @@ export class UI {
     const mul = xpGainMul(s.level) || 1;
     const cap = (xpForLevel(s.level) * OFFLINE.xpMaxLevelFrac) / mul; // addXP içinde ×mul uygulanır
     xp = Math.round(Math.min(xp, cap));
-    return amount > 0 || xp > 0 ? { amount, sec, xp } : null;
+    return amount > 0 || xp > 0 ? { amount, sec, xp, away: offlineSec } : null;
   }
   /** Arka plandan dönüş: oyun kapatılmadan (Android'de ana ekrana dönüp gelmek, tarayıcıda sekme değiştirmek)
    *  geri gelindiğinde de "Sen yokken" kazancı verilir. Önceden yalnızca oyun tamamen kapatılıp açılınca veriliyordu. */
@@ -505,7 +511,7 @@ export class UI {
       const sec = (Date.now() - hiddenAt) / 1000; hiddenAt = 0;
       const off = this.offlineCalc(sec);
       if (!off) return;
-      const open = () => { if (document.hidden) return; if ($('#modal-root')?.children.length) { setTimeout(open, 1500); return; } this.offline(off.amount, off.sec, off.xp); };
+      const open = () => { if (document.hidden) return; if ($('#modal-root')?.children.length) { setTimeout(open, 1500); return; } this.offline(off.amount, off.sec, off.xp, off.away); };
       setTimeout(open, 400);
     };
     document.addEventListener('visibilitychange', () => (document.hidden ? hide() : show()));
@@ -525,11 +531,12 @@ export class UI {
       </ul>
       <button class="btn green big" data-act="modal:close">Başla!</button></div>`, { sticky: true });
   }
-  offline(amount, sec, xp = 0) {
+  offline(amount, sec, xp = 0, away = sec) {
     const g = this.game;
     const giveXp = (k) => { if (xp > 0) g.levels.addXP(xp * k); };
     const m = this.modal(`<div class="offline"><div class="o-title">Sen yokken işçilerin çalıştı!</div>
-      <div class="o-time">${Math.floor(sec / 3600)} sa ${Math.floor((sec % 3600) / 60)} dk</div>
+      <div class="o-time">${awayText(away)} uzaktaydın</div>
+      ${away > sec + 60 ? `<div class="o-cap">Kazanç en fazla ${awayText(sec)} için hesaplanır</div>` : ''}
       <div class="o-amount">${ICONS.coin}<b>${fmt(amount)}</b></div>
       ${xp > 0 ? `<div class="o-amount o-xp">${ICONS.star || ''}<b>+${fmt(Math.floor(xp * xpGainMul(g.state.level)))} XP</b></div>` : ''}
       <div class="o-btns"><button class="btn" data-act="modal:close" id="o-take">Al</button>
